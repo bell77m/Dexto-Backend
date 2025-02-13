@@ -2,7 +2,7 @@ from config.config import Config
 from graphql_app.schema import schema
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
-from fastapi.middleware.cors import CORSMiddleware
+# from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 
