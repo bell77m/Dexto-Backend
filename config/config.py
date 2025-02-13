@@ -1,5 +1,4 @@
 import configparser
-from typing import Dict
 
 
 class Config:
@@ -28,3 +27,18 @@ class Config:
         except configparser.Error as e:
             print(f"Error: {e.message}")
 
+
+    def load_server_config(self) -> dict[str, str]:
+        try:
+            conf = configparser.ConfigParser()
+            conf.read(self.__conf_path)
+            server_host = conf.get('Server', 'host')
+            server_port = conf.get('Server', 'port')
+            config_value = {
+                'host': server_host,
+                'port': server_port,
+            }
+            return config_value
+
+        except configparser.Error as e:
+            print(f"Error: {e.message}")
