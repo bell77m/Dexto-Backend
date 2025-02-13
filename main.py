@@ -23,6 +23,7 @@ graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
 
 if __name__ == "__main__":
+
     conf = Config("config/config.ini")
     #run sever
     uvicorn.run(app, host=conf.load_server_config()["host"], port=int(conf.load_server_config()["port"]))
