@@ -23,6 +23,7 @@ app.include_router(graphql_app, prefix="/graphql")
 
 if __name__ == "__main__":
 
+    #run
     uvicorn.run(app, host="127.0.0.1", port=8000)
 
 
