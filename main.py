@@ -1,7 +1,8 @@
+from config.config import Config
 from graphql_app.schema import schema
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
-from fastapi.middleware.cors import CORSMiddleware
+# from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 
@@ -23,8 +24,9 @@ app.include_router(graphql_app, prefix="/graphql")
 
 if __name__ == "__main__":
 
+    conf = Config("config/config.ini")
     #run sever
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host=conf.load_server_config()["host"], port=int(conf.load_server_config()["port"]))
 
 
     # cursor = mydb.cursor()
