@@ -80,7 +80,7 @@ function addRemoteVideo(stream){
 
 
 
-//so far video call is working fine.. lets toggle the video or audio
+//toggle the video
 function toggleVideo(b){
   if(b=="true"){
     myStream.getVideoTracks()[0].enabled = true
