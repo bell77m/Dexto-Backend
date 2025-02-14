@@ -1,8 +1,6 @@
-
 var peer = new Peer()
 var myStream
 var peerList = []
-
 
 //this function will be initiating the peer
 function init(userId){
@@ -13,7 +11,6 @@ function init(userId){
 
   listenToCall()
 }
-
 
 //this function will keep listening to call or incoming events
 function listenToCall(){
@@ -78,8 +75,6 @@ function addRemoteVideo(stream){
   document.getElementById("remoteVideo").append(video)
 }
 
-
-
 //toggle the video
 function toggleVideo(b){
   if(b=="true"){
@@ -99,3 +94,5 @@ function toggleAudio(b){
     myStream.getAudioTracks()[0].enabled = false
   }
 }
+
+// still need to use console for this, waiting for front-end
