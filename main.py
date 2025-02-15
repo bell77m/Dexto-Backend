@@ -1,14 +1,15 @@
 # pip install strawberry-graphql fastapi uvicorn sqlalchemy mysql-connector-python
 
 import strawberry
+import ipconfig
 from fastapi import FastAPI
 from strawberry.asgi import GraphQL
-from schema2 import schema
+from users import schema_users
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-graphql_app = GraphQL(schema)
+graphql_app = GraphQL(schema_users)
 
 app.add_route("/graphql", graphql_app)
 app.add_websocket_route("/graphql", graphql_app)
@@ -23,7 +24,7 @@ app.add_middleware(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="10.6.38.139", port=3000)
+    uvicorn.run(app, host=ipconfig.ip, port=3000)
 
 # run อย่าลืม cd เข้า file 
 # python -m uvicorn main:app --host 10.6.38.139 --port 3000 --reload
@@ -54,7 +55,6 @@ if __name__ == "__main__":
 #     id
 #     displayName
 #     email
-#     password
 #   }
 # }
 

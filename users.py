@@ -82,4 +82,4 @@ class Query:
         connection.close()
         return [User(id=user[0], display_name=user[1], email=user[2]) for user in users]
 
-schema = strawberry.Schema(query=Query, mutation=Mutation)
+schema_users = strawberry.Schema(query=Query, mutation=Mutation)
