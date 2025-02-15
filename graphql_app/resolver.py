@@ -159,3 +159,5 @@ class Mutation:
     @strawberry.mutation
     def delete_user(self, id: int) -> bool:
         return UserGateway.delete_user(id)
+
+    # testDom
