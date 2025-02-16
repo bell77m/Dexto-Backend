@@ -1,44 +1,34 @@
 import configparser
 
-
 class Config:
-
-    __conf_path = ""
-    def __init__(self, __conf_path):
-        self.__conf_path = __conf_path
-
+    def __init__(self, conf_path: str):
+        self.conf_path = conf_path
 
     def load_db_config(self) -> dict[str, str]:
         try:
             conf = configparser.ConfigParser()
-            conf.read(self.__conf_path)
-            db_host = conf.get('Database', 'host')
-            db_port = conf.get('Database', 'port')
-            db_user = conf.get('Database', 'user')
-            db_pass = conf.get('Database', 'password')
-            config_value = {
-                'host': db_host,
-                'user': db_user,
-                'password': db_pass,
-                'port': db_port,
+            conf.read(self.conf_path)
+
+            return {
+                'host': conf.get('Database', 'host', fallback='localhost'),
+                'port': conf.get('Database', 'port', fallback='3306'),
+                'user': conf.get('Database', 'user', fallback='root'),
+                'password': conf.get('Database', 'password', fallback=''),
+                'database': conf.get('Database', 'database', fallback='your_database_name')  # เพิ่มการดึงค่า database
             }
-            return config_value
-
-        except configparser.Error as e:
-            print(f"Error: {e.message}")
-
+        except Exception as e:
+            print(f"❌ Error loading DB config: {str(e)}")
+            return {}
 
     def load_server_config(self) -> dict[str, str]:
         try:
             conf = configparser.ConfigParser()
-            conf.read(self.__conf_path)
-            server_host = conf.get('Server', 'host')
-            server_port = conf.get('Server', 'port')
-            config_value = {
-                'host': server_host,
-                'port': server_port,
-            }
-            return config_value
+            conf.read(self.conf_path)
 
-        except configparser.Error as e:
-            print(f"Error: {e.message}")
+            return {
+                'host': conf.get('Server', 'host', fallback='127.0.0.1'),
+                'port': conf.get('Server', 'port', fallback='8000'),
+            }
+        except Exception as e:
+            print(f"❌ Error loading Server config: {str(e)}")
+            return {}

@@ -1,20 +1,27 @@
 import strawberry
-import bcrypt
 from typing import List, Optional
+from .Types import UserType, UsersType  # ใช้ . (dot) เพื่อบอกว่าเป็นไฟล์ในโฟลเดอร์เดียวกัน
+  # นำเข้า UserType และ UsersType
+import bcrypt
 import mysql.connector
-from .Types import UserType, UsersType
-
+from config.config import Config  # นำเข้าคลาส Config จากไฟล์ config.py
 
 class UserGateway:
     @staticmethod
     def get_db_connection():
         try:
-            return mysql.connector.connect(
-                host="10.6.38.144",
-                user="root",
-                password="123456",
-                database="dexto_demo7"
+            # โหลดการตั้งค่าจาก config.ini
+            conf = Config("config/config.ini")
+            db_config = conf.load_db_config()
+
+            conn = mysql.connector.connect(
+                host=db_config['host'],
+                user=db_config['user'],
+                password=db_config['password'],
+                database=db_config['database']
             )
+            conn.autocommit = True
+            return conn
         except mysql.connector.Error as e:
             print(f"Database connection error: {e}")
             return None
@@ -25,11 +32,13 @@ class UserGateway:
         if not conn:
             return []
 
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         cursor.execute('SELECT id, display_name, email FROM users')
-        rows = cursor.fetchall()
-        conn.close()
+        columns = [col[0] for col in cursor.description]
+        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        cursor.close()
 
+        conn.close()
         return [UserType(id=row['id'], display_name=row['display_name'], email=row['email']) for row in rows]
 
     @classmethod
@@ -38,25 +47,28 @@ class UserGateway:
         if not conn:
             return None
 
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         cursor.execute('SELECT id, display_name, email FROM users WHERE id = %s', (id,))
         row = cursor.fetchone()
-        conn.close()
+        cursor.close()
 
+        conn.close()
         if row:
-            return UserType(id=row['id'], display_name=row['display_name'], email=row['email'])
+            return UserType(id=row[0], display_name=row[1], email=row[2])
         return None
 
     @classmethod
     def add_user(cls, display_name: str, email: str, password: str) -> Optional[UserType]:
         try:
-            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
             conn = cls.get_db_connection()
-            cursor = conn.cursor()
+            if not conn:
+                return None
 
-            # Check if the email already exists
+            cursor = conn.cursor()
             cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
             if cursor.fetchone():
+                cursor.close()
                 conn.close()
                 raise ValueError("Email already in use")
 
@@ -64,10 +76,9 @@ class UserGateway:
                 'INSERT INTO users (display_name, email, password) VALUES (%s, %s, %s)',
                 (display_name, email, hashed_pw)
             )
-            conn.commit()
             new_id = cursor.lastrowid
+            cursor.close()
             conn.close()
-
             return UserType(id=new_id, display_name=display_name, email=email)
 
         except mysql.connector.Error as e:
@@ -81,10 +92,11 @@ class UserGateway:
         if not conn:
             return None
 
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         cursor.execute('SELECT id FROM users WHERE id = %s', (id,))
         row = cursor.fetchone()
         if not row:
+            cursor.close()
             conn.close()
             return None
 
@@ -97,17 +109,19 @@ class UserGateway:
             updates.append("email = %s")
             values.append(email)
         if password:
-            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
             updates.append("password = %s")
             values.append(hashed_pw)
 
         if not updates:
+            cursor.close()
+            conn.close()
             return None
 
         values.append(id)
         query = f"UPDATE users SET {', '.join(updates)} WHERE id = %s"
         cursor.execute(query, values)
-        conn.commit()
+        cursor.close()
         conn.close()
         return cls.get_user_by_id(id)
 
@@ -118,16 +132,11 @@ class UserGateway:
             return False
 
         cursor = conn.cursor()
-        cursor.execute('SELECT id FROM users WHERE id = %s', (id,))
-        row = cursor.fetchone()
-        if not row:
-            conn.close()
-            return False
-
         cursor.execute('DELETE FROM users WHERE id = %s', (id,))
-        conn.commit()
+        deleted = cursor.rowcount > 0
+        cursor.close()
         conn.close()
-        return True
+        return deleted
 
 
 @strawberry.type
@@ -159,5 +168,3 @@ class Mutation:
     @strawberry.mutation
     def delete_user(self, id: int) -> bool:
         return UserGateway.delete_user(id)
-
-    # testDom
