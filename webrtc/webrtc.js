@@ -5,7 +5,7 @@ var peerList = []
 //this function will be initiating the peer
 function init(userId){
   peer = new Peer(userId)
-  peer.on('open',(id)=>{
+  peer.on('open',(id) => {
     console.log(id+" connected") //if we connect successfully this will print
   })
 
@@ -14,23 +14,23 @@ function init(userId){
 
 //this function will keep listening to call or incoming events
 function listenToCall(){
-  peer.on('call',(call)=>{
+  peer.on('call',(call) => {
     navigator.mediaDevices.getUserMedia({
-      video:true,
+      video: true,
       audio: true
-    }).then((stream)=>{
+    }).then((stream) => {
 
       myStream = stream
       addLocalVideo(stream)
       call.answer(stream)
-      call.on('stream',(remoteStream)=>{
+      call.on('stream',(remoteStream) => {
         if(!peerList.includes(call.peer)){
           addRemoteVideo(remoteStream)
           peerList.push(call.peer)
         }
       })
-    }).catch((err)=>{
-      console.log("unable to connect because "+err)
+    }).catch((err) => {
+      console.log("unable to connect because " + err)
     })
   })
 }
@@ -38,13 +38,13 @@ function listenToCall(){
 //this function will be called when we try to make a call
 function makeCall(receiverId){
     navigator.mediaDevices.getUserMedia({
-      video:true,
+      video: true,
       audio: true
-    }).then((stream)=>{
+    }).then((stream) => {
       myStream = stream
       addLocalVideo(stream)
       let call = peer.call(receiverId,stream)
-      call.on('stream',(remoteStream)=>{
+      call.on('stream',(remoteStream) => {
         if(!peerList.includes(call.peer)){
           addRemoteVideo(remoteStream)
           peerList.push(call.peer)
@@ -77,7 +77,7 @@ function addRemoteVideo(stream){
 
 //toggle the video
 function toggleVideo(b){
-  if(b=="true"){
+  if(b == "true"){
     myStream.getVideoTracks()[0].enabled = true
   }
   else{
@@ -87,7 +87,7 @@ function toggleVideo(b){
 
 //toggle audio
 function toggleAudio(b){
-  if(b=="true"){
+  if(b == "true"){
     myStream.getAudioTracks()[0].enabled = true
   }
   else{
