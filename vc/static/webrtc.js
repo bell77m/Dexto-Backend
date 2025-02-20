@@ -38,7 +38,7 @@ function listenToCall(){
 // make call
 function makeCall(receiverId){
   // Check if getUserMedia is available and request permission
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
       // This will show the permission dialog when called
       navigator.mediaDevices.getUserMedia({
           video: true,
