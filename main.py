@@ -1,6 +1,7 @@
 import socket
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from graphql_app.schema import schema
 from strawberry.fastapi import GraphQLRouter
 from config.config import Config
@@ -17,6 +18,16 @@ def get_local_ip() -> str:
 
 # สร้างแอพ FastAPI
 app = FastAPI()
+
+# ตั้งค่า CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # หรือระบุเป็น URL ของ frontend ที่จะให้สามารถเข้าถึงได้
+    allow_credentials=True,
+    allow_methods=["*"],  # อนุญาตให้ใช้ทุก method (GET, POST, PUT, DELETE, ฯลฯ)
+    allow_headers=["*"],  # อนุญาตให้ใช้ header ทั้งหมด
+)
+
 
 # สร้าง router สำหรับ GraphQL
 graphql_app = GraphQLRouter(schema)
