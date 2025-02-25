@@ -1,6 +1,6 @@
 import strawberry
 from typing import List, Optional
-from .Types import UserType, UsersType  # ใช้ . (dot) เพื่อบอกว่าเป็นไฟล์ในโฟลเดอร์เดียวกัน
+from .Types import UserType, UsersType, LoginResponse# ใช้ . (dot) เพื่อบอกว่าเป็นไฟล์ในโฟลเดอร์เดียวกัน
 import bcrypt
 import mysql.connector
 from config.config import Config  # นำเข้าคลาส Config จากไฟล์ config.py
@@ -201,15 +201,13 @@ class Mutation:
         return UserGateway.delete_user(id)
     
     @strawberry.mutation
-    def login_user(self, email: str, password: str) -> Optional[UserType]:
+    def login_user(self, email: str, password: str) -> LoginResponse:
+        # สมมติว่าเรามีฟังก์ชัน login_user ที่รับค่า email และ password แล้ว
         try:
             user = UserGateway.login_user(email, password)
             if user:
-                return user
-            raise ValueError("Invalid email or password")
+                return LoginResponse(success=True, message="Login successful!", user=user)
+            else:
+                return LoginResponse(success=False, message="Invalid email or password", user=None)
         except ValueError as e:
-            print(f"Login Error: {e}")
-            raise ValueError(f"Invalid email or password: {str(e)}")
-        except Exception as e:
-            print(f"Error during login: {e}")
-            raise ValueError(f"An unexpected error occurred: {str(e)}")
+            return LoginResponse(success=False, message=str(e), user=None)
