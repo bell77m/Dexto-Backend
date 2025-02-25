@@ -1,7 +1,6 @@
 import strawberry
 from typing import List, Optional
 from .Types import UserType, UsersType  # ใช้ . (dot) เพื่อบอกว่าเป็นไฟล์ในโฟลเดอร์เดียวกัน
-  # นำเข้า UserType และ UsersType
 import bcrypt
 import mysql.connector
 from config.config import Config  # นำเข้าคลาส Config จากไฟล์ config.py
@@ -60,7 +59,7 @@ class UserGateway:
     @classmethod
     def add_user(cls, display_name: str, email: str, password: str) -> Optional[UserType]:
         try:
-            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
             conn = cls.get_db_connection()
             if not conn:
                 return None
@@ -109,7 +108,7 @@ class UserGateway:
             updates.append("email = %s")
             values.append(email)
         if password:
-            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
             updates.append("password = %s")
             values.append(hashed_pw)
 
@@ -137,6 +136,38 @@ class UserGateway:
         cursor.close()
         conn.close()
         return deleted
+    
+    @classmethod
+    def login_user(cls, email: str, password: str) -> Optional[UserType]:
+        print(f"Attempting login for email: {email}")
+        conn = cls.get_db_connection()
+        if not conn:
+            raise ValueError("Database connection failed")
+
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, display_name, email, password FROM users WHERE email = %s", (email,))
+        row = cursor.fetchone()
+
+        if not row:
+            print(f"No user found with email: {email}")
+            cursor.close()
+            conn.close()
+            raise ValueError("Invalid email or password")
+
+        user_id, display_name, email_db, hashed_pw = row
+        print(f"User found: {user_id}, {display_name}, {email_db}")
+
+        # แปลง hashed_pw ที่เก็บในฐานข้อมูลเป็น bytes ก่อนการเปรียบเทียบ
+        # ใช้ bcrypt.checkpw() โดยตรงโดยไม่ต้องใช้ .encode() บน hashed_pw
+        if bcrypt.checkpw(password.encode('utf-8'), hashed_pw.encode('utf-8')):
+            cursor.close()
+            conn.close()
+            return UserType(id=user_id, display_name=display_name, email=email_db)
+
+        print("Password does not match")
+        cursor.close()
+        conn.close()
+        raise ValueError("Invalid email or password")
 
 
 @strawberry.type
@@ -168,3 +199,17 @@ class Mutation:
     @strawberry.mutation
     def delete_user(self, id: int) -> bool:
         return UserGateway.delete_user(id)
+    
+    @strawberry.mutation
+    def login_user(self, email: str, password: str) -> Optional[UserType]:
+        try:
+            user = UserGateway.login_user(email, password)
+            if user:
+                return user
+            raise ValueError("Invalid email or password")
+        except ValueError as e:
+            print(f"Login Error: {e}")
+            raise ValueError(f"Invalid email or password: {str(e)}")
+        except Exception as e:
+            print(f"Error during login: {e}")
+            raise ValueError(f"An unexpected error occurred: {str(e)}")

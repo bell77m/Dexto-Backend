@@ -103,3 +103,11 @@ if __name__ == "__main__":
 # mutation {
 #   deleteUser(id: 1)
 # }
+
+# mutation {
+#   loginUser(email: "dom2@gmail.com", password: "123") {
+#     id
+#     displayName
+#     email
+#   }
+# }
