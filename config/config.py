@@ -14,7 +14,7 @@ class Config:
                 'port': conf.get('Database', 'port', fallback='3306'),
                 'user': conf.get('Database', 'user', fallback='root'),
                 'password': conf.get('Database', 'password', fallback=''),
-                'database': conf.get('Database', 'database', fallback='your_database_name')  # เพิ่มการดึงค่า database
+                'database': conf.get('Database', 'database', fallback='your_database_name') 
             }
         except Exception as e:
             print(f"❌ Error loading DB config: {str(e)}")

@@ -15,9 +15,11 @@ app.include_router(graphql_app, prefix="/graphql")
 def run():
     conf = Config("config/config.ini")
     server_config = conf.load_server_config()
+    
+    # ใช้การอ้างอิงแบบ "main:app" สำหรับ uvicorn
     uvicorn.run("main:app", host=server_config["host"], port=int(server_config["port"]), reload=True)
 
-# รันเซิร์ฟเวอร์
+# รันเซิร์ฟเวอร์เมื่อเรียกไฟล์นี้
 if __name__ == "__main__":
     run()
 
@@ -33,6 +35,7 @@ if __name__ == "__main__":
 # python -m uvicorn main:app --host 10.6.38.146 --port 3000 --reload 
 # python -m uvicorn main:app --reload
     
+
 # query {
 #   users {
 #     users {
@@ -44,7 +47,7 @@ if __name__ == "__main__":
 # }
 
 # mutation {
-#   createUser(displayName: "John Doe", email: "john@example.com", password: "123456") {
+#   createUser(displayName: "John Doe", email: "johndoe@example.com", password: "password123") {
 #     id
 #     displayName
 #     email
@@ -52,7 +55,7 @@ if __name__ == "__main__":
 # }
 
 # mutation {
-#   updateUser(id: 1, displayName: "Updated Name", email: "updated@example.com") {
+#   updateUser(id: 1, displayName: "U", email: "updated@example.com") {
 #     id
 #     displayName
 #     email
@@ -60,5 +63,5 @@ if __name__ == "__main__":
 # }
 
 # mutation {
-#   deleteUser(id: 3)
+#   deleteUser(id: 1)
 # }

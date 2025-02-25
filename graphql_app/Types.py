@@ -9,4 +9,4 @@ class UserType:
 
 @strawberry.type
 class UsersType:
-    users: List[UserType]  # Use `List[UserType]` for Python <3.9
+    users: List[UserType]  
