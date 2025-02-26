@@ -1,15 +1,14 @@
 import strawberry
 from typing import List, Optional
-from .Types import UserType, UsersType, LoginResponse# ใช้ . (dot) เพื่อบอกว่าเป็นไฟล์ในโฟลเดอร์เดียวกัน
+from .Types import UserType, UsersType, LoginResponse
 import bcrypt
 import mysql.connector
-from config.config import Config  # นำเข้าคลาส Config จากไฟล์ config.py
+from config.config import Config  
 
 class UserGateway:
     @staticmethod
     def get_db_connection():
         try:
-            # โหลดการตั้งค่าจาก config.ini
             conf = Config("config/config.ini")
             db_config = conf.load_db_config()
 
@@ -157,8 +156,6 @@ class UserGateway:
         user_id, display_name, email_db, hashed_pw = row
         print(f"User found: {user_id}, {display_name}, {email_db}")
 
-        # แปลง hashed_pw ที่เก็บในฐานข้อมูลเป็น bytes ก่อนการเปรียบเทียบ
-        # ใช้ bcrypt.checkpw() โดยตรงโดยไม่ต้องใช้ .encode() บน hashed_pw
         if bcrypt.checkpw(password.encode('utf-8'), hashed_pw.encode('utf-8')):
             cursor.close()
             conn.close()
@@ -202,7 +199,6 @@ class Mutation:
     
     @strawberry.mutation
     def login_user(self, email: str, password: str) -> LoginResponse:
-        # สมมติว่าเรามีฟังก์ชัน login_user ที่รับค่า email และ password แล้ว
         try:
             user = UserGateway.login_user(email, password)
             if user:
