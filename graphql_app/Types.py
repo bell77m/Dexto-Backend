@@ -1,5 +1,6 @@
 import strawberry
-from typing import Optional, List
+from typing import List
+from typing import Optional
 
 @strawberry.type
 class UserType:
@@ -9,10 +10,12 @@ class UserType:
 
 @strawberry.type
 class UsersType:
-    users: List[UserType]
-
+    users: List[UserType]  
+    
 @strawberry.type
 class LoginResponse:
     success: bool
     message: str
     user: Optional[UserType]
+    
+
