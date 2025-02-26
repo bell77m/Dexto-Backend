@@ -21,8 +21,7 @@ class UserGateway:
             conn.autocommit = True
             return conn
         except mysql.connector.Error as e:
-            print(f"Database connection error: {e}")
-            return None
+            raise Exception(f"Database connection error: {e}")
 
     @classmethod
     def get_users(cls) -> List[UserType]:
@@ -30,14 +29,12 @@ class UserGateway:
         if not conn:
             return []
 
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT id, display_name, email FROM users')
-        columns = [col[0] for col in cursor.description]
-        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        rows = cursor.fetchall()
         cursor.close()
-
         conn.close()
-        return [UserType(id=row['id'], display_name=row['display_name'], email=row['email']) for row in rows]
+        return [UserType(**row) for row in rows]
 
     @classmethod
     def get_user_by_id(cls, id: int) -> Optional[UserType]:
@@ -45,20 +42,19 @@ class UserGateway:
         if not conn:
             return None
 
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT id, display_name, email FROM users WHERE id = %s', (id,))
         row = cursor.fetchone()
         cursor.close()
-
         conn.close()
-        if row:
-            return UserType(id=row[0], display_name=row[1], email=row[2])
-        return None
+        return UserType(**row) if row else None
 
     @classmethod
     def add_user(cls, display_name: str, email: str, password: str) -> Optional[UserType]:
         try:
-            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+            email = email.strip().lower()
+            display_name = display_name.strip()
+            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
             conn = cls.get_db_connection()
             if not conn:
                 return None
@@ -107,7 +103,7 @@ class UserGateway:
             updates.append("email = %s")
             values.append(email)
         if password:
-            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
             updates.append("password = %s")
             values.append(hashed_pw)
 
@@ -138,34 +134,25 @@ class UserGateway:
     
     @classmethod
     def login_user(cls, email: str, password: str) -> Optional[UserType]:
+        email = email.strip().lower()
         print(f"Attempting login for email: {email}")
         conn = cls.get_db_connection()
         if not conn:
             raise ValueError("Database connection failed")
 
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, display_name, email, password FROM users WHERE email = %s", (email,))
-        row = cursor.fetchone()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT id, display_name, email, password FROM users WHERE email = %s", (email,))
+            row = cursor.fetchone()
+            if not row:
+                raise ValueError("Invalid email")
 
-        if not row:
-            print(f"No user found with email: {email}")
+            if bcrypt.checkpw(password.encode('utf-8'), row['password'].encode('utf-8')):
+                return UserType(**{k: v for k, v in row.items() if k != 'password'})
+            raise ValueError("Wrong password")
+        finally:
             cursor.close()
             conn.close()
-            raise ValueError("Invalid email")
-
-        user_id, display_name, email_db, hashed_pw = row
-        print(f"User found: {user_id}, {display_name}, {email_db}")
-
-        if bcrypt.checkpw(password.encode('utf-8'), hashed_pw.encode('utf-8')):
-            cursor.close()
-            conn.close()
-            return UserType(id=user_id, display_name=display_name, email=email_db)
-
-        print("Password does not match")
-        cursor.close()
-        conn.close()
-        raise ValueError("wrong password")
-
 
 @strawberry.type
 class Query:
@@ -180,7 +167,6 @@ class Query:
     @strawberry.field
     def user(self, id: int) -> Optional[UserType]:
         return UserGateway.get_user_by_id(id)
-
 
 @strawberry.type
 class Mutation:
@@ -201,9 +187,6 @@ class Mutation:
     def login_user(self, email: str, password: str) -> LoginResponse:
         try:
             user = UserGateway.login_user(email, password)
-            if user:
-                return LoginResponse(success=True, message="Login successful!", user=user)
-            else:
-                return LoginResponse(success=False, message="Invalid email or password", user=None)
+            return LoginResponse(success=True, message="Login successful!", user=user) if user else LoginResponse(success=False, message="Invalid email or password", user=None)
         except ValueError as e:
             return LoginResponse(success=False, message=str(e), user=None)
