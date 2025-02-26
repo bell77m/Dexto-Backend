@@ -89,7 +89,7 @@ if __name__ == "__main__":
 # }
 
 # mutation {
-#   updateUser(id: 1, displayName: "U", email: "updated@example.com") {
+#   updateUser(id: 1, displayName: "New Name", email: "newemail@example.com", password: "newpassword") {
 #     id
 #     displayName
 #     email
@@ -101,9 +101,13 @@ if __name__ == "__main__":
 # }
 
 # mutation {
-#   loginUser(email: "dom2@gmail.com", password: "123") {
-#     id
-#     displayName
-#     email
+#   loginUser(email: "d@gmail.com", password: "123") {
+#     success
+#     message
+#     user {
+#       id
+#       displayName
+#       email
+#     }
 #   }
 # }
