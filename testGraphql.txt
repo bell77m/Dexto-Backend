@@ -1,0 +1,62 @@
+#  python main.py
+
+    # cursor = mydb.cursor()
+    # cursor.execute("SHOW DATABASES")
+    # for db in cursor.fetchall():
+    #     print(db)
+    
+# python -m uvicorn main:app --host 10.6.38.146 --port 3000 --reload 
+# python -m uvicorn main:app --reload
+
+# GRANT ALL PRIVILEGES ON *.* TO 'root'@'10.6.38.%' IDENTIFIED BY '123456';
+# FLUSH PRIVILEGES;
+
+# REVOKE ALL PRIVILEGES ON *.* FROM 'root'@'10.6.38.%';
+# FLUSH PRIVILEGES;
+
+# CHECK TABLE mysql.db, mysql.user, mysql.tables_priv, mysql.columns_priv;
+# REPAIR TABLE mysql.db, mysql.user, mysql.tables_priv, mysql.columns_priv;
+
+    
+
+# query {
+#   users {
+#     users {
+#       id
+#       displayName
+#       email
+#     }
+#   }
+# }
+
+# mutation {
+#   createUser(displayName: "John Doe", email: "johndoe@example.com", password: "password123") {
+#     id
+#     displayName
+#     email
+#   }
+# }
+
+# mutation {
+#   updateUser(id: 1, displayName: "New Name", email: "newemail@example.com", password: "newpassword") {
+#     id
+#     displayName
+#     email
+#   }
+# }
+
+# mutation {
+#   deleteUser(id: 1)
+# }
+
+# mutation {
+#   loginUser(email: "d@gmail.com", password: "123") {
+#     success
+#     message
+#     user {
+#       id
+#       displayName
+#       email
+#     }
+#   }
+# }
