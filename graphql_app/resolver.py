@@ -151,7 +151,7 @@ class UserGateway:
             print(f"No user found with email: {email}")
             cursor.close()
             conn.close()
-            raise ValueError("Invalid email or password")
+            raise ValueError("Invalid email")
 
         user_id, display_name, email_db, hashed_pw = row
         print(f"User found: {user_id}, {display_name}, {email_db}")
@@ -164,7 +164,7 @@ class UserGateway:
         print("Password does not match")
         cursor.close()
         conn.close()
-        raise ValueError("Invalid email or password")
+        raise ValueError("wrong password")
 
 
 @strawberry.type
