@@ -14,6 +14,10 @@ def get_local_ip() -> str:
     except Exception as e:
         print(f" Error getting local IP: {str(e)}")
         return "127.0.0.1"  
+    
+def get_domain_name() -> str:
+    
+    return "dexto.com" 
 
 app = FastAPI()
 
@@ -37,15 +41,33 @@ def run():
     server_config = conf.load_server_config()
 
     local_ip = get_local_ip()
+    domain_name = get_domain_name()
+
 
     db_config["host"] = local_ip
-    server_config["host"] = local_ip
+    server_config["host"] = domain_name
+    
+    print(f"Running server on http://{domain_name}:{server_config['port']}")
     
     uvicorn.run("main:app", host=server_config["host"], port=int(server_config["port"]), reload=True)
 
 
 if __name__ == "__main__":
     run()
+    
+ 
 
 
+
+
+
+
+    
+    
+
+   
+    
+    
+    
+ 
 
