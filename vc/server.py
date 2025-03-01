@@ -2,13 +2,11 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn, json, socket
-# from fastapi.middleware.cors import CORSMiddleware
-
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-
+# Get server's local IP address
 def get_server_ip():
     try:
         hostname = socket.gethostname()
@@ -17,12 +15,12 @@ def get_server_ip():
     except:
         return "127.0.0.1"  # Fallback to localhost
 
-
 def read_html(html):
     with open(f"templates/{html}", "r", encoding="utf-8") as file:
         return file.read()
 
 
+# ConnectionManager to handle WebSocket connections
 class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
@@ -41,31 +39,28 @@ class ConnectionManager:
         for connection in self.active_connections:
             await connection.send_text(message)
 
-
 manager = ConnectionManager()
-
 
 @app.get("/")
 async def get():
     return HTMLResponse(content=read_html("text_chat.html"))
-
 
 @app.get("/server-ip")
 async def get_server_ip_endpoint():
     return {"ip": get_server_ip()}
 
 
-# text chat endpoint
+# Text chat endpoint
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: int):
     await manager.connect(websocket)
-    try: 
+    try:
         while True:
             data = await websocket.receive_text()
             await manager.send_personal_message(websocket, f"You wrote: {data}")
             await manager.broadcast(f"Client #{user_id} says: {data}")
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        await manager.disconnect(websocket)
         await manager.broadcast(f"Client #{user_id} has left the chat")
 
 
@@ -74,26 +69,35 @@ async def get():
     return HTMLResponse(content=read_html("voice_chat.html"))
 
 
-# voice endpoint
+connected_users = {}
+# Voice chat WebSocket endpoint
 @app.websocket("/ws/vc/{user_id}")
-async def call_endpoint(websocket: WebSocket, user_id: str):
-    await manager.connect(websocket)
+async def vc_websocket_endpoint(websocket: WebSocket, user_id: str):
+    await websocket.accept()
+    connected_users[user_id] = websocket
     try:
         while True:
             message = await websocket.receive_text()
-            message_data = json.loads(message)
-            target_peer = message_data.get("target")
-            if target_peer == "all":
-                await manager.broadcast(json.dumps(message_data), sender_id=user_id)
-            elif target_peer in manager.active_connections:
-                await manager.send_personal_message(json.dumps(message_data), target_peer)
+            data = json.loads(message)
+            
+            if data["type"] == "peer-connect": # peer connection
+                for peer_id, peer_ws in connected_users.items():
+                    await peer_ws.send_text(json.dumps({
+                        "type": "peer-connect",
+                        "peer_id": user_id
+                    }))
     except WebSocketDisconnect:
-        manager.disconnect(user_id)
-        await manager.broadcast(json.dumps({"type": "peer-disconnect", "peer_id": user_id}))
+        if user_id in connected_users: # peer disconnection
+            del connected_users[user_id]
+        for peer_ws in connected_users.values():
+            await peer_ws.send_text(json.dumps({
+                "type": "peer-disconnect",
+                "peer_id": user_id
+            }))
 
 
 if __name__ == "__main__":
-    config = uvicorn.Config("server:app", host = get_server_ip(), port=8000)
+    config = uvicorn.Config("server:app", host=get_server_ip(), port=8000)
     server = uvicorn.Server(config)
     server.run()
 
