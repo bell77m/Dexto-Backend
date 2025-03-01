@@ -1,32 +1,13 @@
-const serverUrl = "ws://localhost:8000/ws/";
 let peer;
 let socket;
 let peers = {};
+let localStream = null;
 
-async function startCall() {
-    const userId = Math.random().toString(36).substr(2, 9);
-    peer = new Peer(userId);
-    socket = new WebSocket(serverUrl + userId);
+async function connect_ws(userId) {
+    // Create a WebSocket connection for the given user
+    socket = new WebSocket(`ws://localhost:8000/ws/vc/${userId}`);
 
-    peer.on("open", (id) => {
-        console.log("Connected with ID:", id);
-    });
-
-    peer.on("call", (call) => {
-        navigator.mediaDevices.getUserMedia({ 
-            audio: {
-                autoGainControl: true,
-                echoCancellation: true,
-                noiseSuppression: true,
-            } 
-        }).then((stream) => {
-            call.answer(stream);
-            call.on("stream", (remoteStream) => {
-                addAudio(remoteStream, call.peer);
-            });
-        });
-    });
-
+    // Handle incoming messages from WebSocket
     socket.onmessage = (event) => {
         const message = JSON.parse(event.data);
 
@@ -39,55 +20,122 @@ async function startCall() {
         }
     };
 
-    navigator.mediaDevices.getUserMedia({ 
-        audio: {        
+    socket.onopen = () => {
+        console.log("WebSocket connection established.");
+        console.log(socket.readyState)
+    };
+
+    socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        console.error("Error details:", {
+            target: error.target,
+            isTrusted: error.isTrusted,
+            currentTarget: error.currentTarget,
+            eventPhase: error.eventPhase
+        });
+    };
+
+    socket.onclose = () => {
+        console.log("WebSocket connection closed.");
+    };
+}
+
+async function startCall() {
+    const userId = Math.random().toString(36);
+    peer = new Peer(userId);
+
+    await connect_ws(userId);
+    console.log("connected with ID: " + userId);
+
+    peer.on("open", (id) => {
+        console.log("Connected with ID:", id);
+        socket.send(JSON.stringify({ type: "peer-connect", target: "all", peer_id: userId }));
+    });
+
+    peer.on("call", (call) => {
+        navigator.mediaDevices.getUserMedia({
+            audio: {
+                autoGainControl: true,
+                echoCancellation: true,
+                noiseSuppression: true,
+            }
+        }).then((stream) => {
+            call.answer(stream);
+            call.on("stream", (remoteStream) => {
+                addAudio(remoteStream, call.peer);
+            });
+        }).catch((error) => {
+            console.error("Error getting user media for incoming call:", error);
+        });
+    });
+
+    // Get the local stream and start the call
+    navigator.mediaDevices.getUserMedia({
+        audio: {
             autoGainControl: true,
             echoCancellation: true,
             noiseSuppression: true,
-        } 
+        }
     }).then((stream) => {
-        addAudio(stream, "local");
-        socket.send(JSON.stringify({ type: "peer-connect", target: "all", peer_id: userId }));
+        // Check if the stream is valid before proceeding
+        if (stream && stream.active) {
+            localStream = stream; // Store the local stream
+            addAudio(localStream, "local");
+        } else {
+            console.error("Local media stream is not valid or has been stopped.");
+        }
+    }).catch((error) => {
+        console.error("Error accessing media devices:", error);
     });
 }
 
 function connectToPeer(peerId) {
-    navigator.mediaDevices.getUserMedia({ 
-        audio: {        
-            autoGainControl: true,  // Let browser manage safe levels
-            echoCancellation: true,
-            noiseSuppression: true,
-        } 
-     }).then((stream) => {
-        const call = peer.call(peerId, stream);
-        call.on("stream", (remoteStream) => {
-            addAudio(remoteStream, peerId);
-        });
-        peers[peerId] = call;
+    if (!localStream || !localStream.active) {
+        console.error("No valid local stream available for connection.");
+        return;
+    }
+
+    const call = peer.call(peerId, localStream);
+    call.on("stream", (remoteStream) => {
+        addAudio(remoteStream, peerId);
     });
+    peers[peerId] = call;
 }
 
 function addAudio(stream, peerId) {
-    let audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    let source = audioContext.createMediaStreamSource(stream);
-    let gainNode = audioContext.createGain();
-    
-    gainNode.gain.value = 1.5; 
+    // Ensure the stream is still active
+    if (stream && stream.active) {
+        let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let source = audioContext.createMediaStreamSource(stream);
+        let gainNode = audioContext.createGain();
 
-    source.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+        gainNode.gain.value = 1.5; // Adjust volume if needed
 
-    let audio = document.createElement("audio");
-    audio.srcObject = stream;
-    audio.autoplay = true;
-    audio.id = peerId;
-    document.getElementById("audioContainer").appendChild(audio);
-}  
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        let audio = document.createElement("audio");
+        audio.srcObject = stream;
+        audio.autoplay = true;
+        audio.id = peerId;
+        document.getElementById("audioContainer").appendChild(audio);
+    } else {
+        console.error("The media stream is no longer valid or has been stopped.");
+    }
+}
 
 function removeAudio(peerId) {
     const audioElement = document.getElementById(peerId);
     if (audioElement) {
         audioElement.remove();
+    }
+}
+
+function stopLocalStream() {
+    // Stop local media stream if it's available
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null; // Clear the reference
     }
 }
 
@@ -97,7 +145,7 @@ function leaveCall() {
         peer = null;
     }
 
-    // Stop all active audio tracks
+    // Stop all active audio tracks of connected peers
     for (let peerId in peers) {
         if (peers[peerId]) {
             peers[peerId].close();
@@ -107,11 +155,7 @@ function leaveCall() {
     peers = {}; // Clear the peer list
 
     // Stop local media stream
-    let localAudio = document.getElementById("local");
-    if (localAudio && localAudio.srcObject) {
-        localAudio.srcObject.getTracks().forEach(track => track.stop());
-        localAudio.remove();
-    }
+    stopLocalStream();
 
     // Close WebSocket connection
     if (socket) {

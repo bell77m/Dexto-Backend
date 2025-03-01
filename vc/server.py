@@ -25,7 +25,7 @@ def read_html(html):
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: list[WebSocket] = [] # store connection
+        self.active_connections: list[WebSocket] = []
     
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -73,9 +73,9 @@ async def get():
     return HTMLResponse(content=read_html("voice_chat.html"))
 
 
-@app.websocket("/vc/ws/{peer_id}")
+@app.websocket("/ws/vc/{peer_id}")
 async def call_endpoint(websocket: WebSocket, peer_id: str):
-    await manager.connect(websocket, peer_id)
+    await manager.connect(websocket)
     
     try:
         while True:
@@ -94,7 +94,7 @@ async def call_endpoint(websocket: WebSocket, peer_id: str):
 
 
 if __name__ == "__main__":
-    config = uvicorn.Config("server:app", host = '127.0.0.1', port=8080)
+    config = uvicorn.Config("server:app", host = '127.0.0.1', port=8000)
     server = uvicorn.Server(config)
     server.run()
 
