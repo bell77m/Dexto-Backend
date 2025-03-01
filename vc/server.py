@@ -13,7 +13,7 @@ def get_server_ip():
     try:
         hostname = socket.gethostname()
         server_ip = socket.gethostbyname(hostname)
-        return server_ip
+        return str(server_ip)
     except:
         return "127.0.0.1"  # Fallback to localhost
 
@@ -31,10 +31,10 @@ class ConnectionManager:
         await websocket.accept()
         self.active_connections.append(websocket)
 
-    def disconnect(self, websocket: WebSocket):
+    async def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
 
-    async def send_personal_message(self, message: str, websocket: WebSocket):
+    async def send_personal_message(self, websocket: WebSocket, message: str):
         await websocket.send_text(message)
 
     async def broadcast(self, message: str):
@@ -55,17 +55,18 @@ async def get_server_ip_endpoint():
     return {"ip": get_server_ip()}
 
 
-@app.websocket("/ws/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: int):
+# text chat endpoint
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: int):
     await manager.connect(websocket)
     try: 
         while True:
             data = await websocket.receive_text()
-            await manager.send_personal_message(f"You wrote: {data}", websocket)
-            await manager.broadcast(f"Client #{client_id} says: {data}")
+            await manager.send_personal_message(websocket, f"You wrote: {data}")
+            await manager.broadcast(f"Client #{user_id} says: {data}")
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        await manager.broadcast(f"Client #{client_id} has left the chat")
+        await manager.broadcast(f"Client #{user_id} has left the chat")
 
 
 @app.get("/vc")
@@ -73,10 +74,10 @@ async def get():
     return HTMLResponse(content=read_html("voice_chat.html"))
 
 
-@app.websocket("/ws/vc/{peer_id}")
-async def call_endpoint(websocket: WebSocket, peer_id: str):
+# voice endpoint
+@app.websocket("/ws/vc/{user_id}")
+async def call_endpoint(websocket: WebSocket, user_id: str):
     await manager.connect(websocket)
-    
     try:
         while True:
             message = await websocket.receive_text()
@@ -84,17 +85,16 @@ async def call_endpoint(websocket: WebSocket, peer_id: str):
             
             target_peer = message_data.get("target")
             if target_peer == "all":
-                await manager.broadcast(json.dumps(message_data), sender_id=peer_id)
+                await manager.broadcast(json.dumps(message_data), sender_id=user_id)
             elif target_peer in manager.active_connections:
                 await manager.send_personal_message(json.dumps(message_data), target_peer)
     except WebSocketDisconnect:
-        manager.disconnect(peer_id)
-        await manager.broadcast(json.dumps({"type": "peer-disconnect", "peer_id": peer_id}))
-
+        manager.disconnect(user_id)
+        await manager.broadcast(json.dumps({"type": "peer-disconnect", "peer_id": user_id}))
 
 
 if __name__ == "__main__":
-    config = uvicorn.Config("server:app", host = '127.0.0.1', port=8000)
+    config = uvicorn.Config("server:app", host = get_server_ip(), port=8000)
     server = uvicorn.Server(config)
     server.run()
 
