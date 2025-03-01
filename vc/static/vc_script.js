@@ -14,7 +14,6 @@ async function connect_ws(userId) {
 
     ws.onmessage = (event) => {
         const message = JSON.parse(event.data);
-
         if (message.type === "peer-connect") {
             if (!peers[message.peer_id]) {
                 connectToPeer(message.peer_id);
@@ -27,7 +26,6 @@ async function connect_ws(userId) {
     ws.onopen = () => {
         console.log("WebSocket connection established.");
         ws.send(JSON.stringify({ type: "peer-connect", target: "all", peer_id: userId }));
-        console.log("ready state: " + ws.readyState)
     };
 
     ws.onerror = (error) => {

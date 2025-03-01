@@ -82,7 +82,6 @@ async def call_endpoint(websocket: WebSocket, user_id: str):
         while True:
             message = await websocket.receive_text()
             message_data = json.loads(message)
-            
             target_peer = message_data.get("target")
             if target_peer == "all":
                 await manager.broadcast(json.dumps(message_data), sender_id=user_id)
