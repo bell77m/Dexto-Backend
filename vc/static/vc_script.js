@@ -1,10 +1,7 @@
-var peer;
-var ws;
-var peers = {}; // Store peer connections
-var localStream = null;
-
-// Store connected users
-var activeUsers = new Set();
+let peer;
+let ws;
+const peers = {}; // Store peer connections
+let localStream = null;
 
 // WebSocket Connection
 async function connectToWebsocket(userId) {
@@ -149,11 +146,5 @@ function leaveCall() {
         peer = null;
     }
 
-    for (let peerId in peers) {
-        removePeer(peerId);
-    }
-
     console.log("Call ended.");
 }
-
-connectToWebsocket();

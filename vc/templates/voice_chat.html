@@ -4,16 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Group Voice Call</title>
-    <script src="https://unpkg.com/peerjs@1.3.2/dist/peerjs.min.js"></script>
-    <button onclick="window.location.href='/'">text chat</button>
+    <button onclick="window.location.href='/'">Text Chat</button>
 </head>
 <body>
     <h2>Group Voice Call</h2>
-    <button onclick="startCall()">Join Call</button>
-    <button onclick="leaveCall()">Leave Call</button>
+    <div id="callControls">
+        <!-- Join and Leave buttons -->
+        <button id="joinCallBtn" onclick="startCall()">Join Call</button>
+        <button id="leaveCallBtn" onclick="leaveCall()" disabled>Leave Call</button>
+    </div>
 
-    <ul id="peerListContainer"></ul>
     <div id="audioContainer"></div>
+    <script src="https://unpkg.com/peerjs@1.3.2/dist/peerjs.min.js"></script>
     <script src="./static/vc_script.js"></script>
 </body>
 </html>

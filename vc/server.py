@@ -70,30 +70,54 @@ async def get():
 
 
 connected_users = {}
-# Voice chat WebSocket endpoint
+# vc endpoint
 @app.websocket("/ws/vc/{user_id}")
 async def vc_websocket_endpoint(websocket: WebSocket, user_id: str):
     await websocket.accept()
     connected_users[user_id] = websocket
+
+    # Send the list of existing peers when a new user connects
+    await websocket.send_json({"type": "peer-list", "peers": list(connected_users.keys())})
+
+    # Notify all peers about the new user
+    await notify_peers()
+
     try:
         while True:
+            # Receive messages from the client
             message = await websocket.receive_text()
             data = json.loads(message)
             
-            if data["type"] == "peer-connect": # peer connection
+            if data["type"] == "peer-connect":
+                target_peer_id = data["peer_id"]
+                # Send peer connect message to all other peers
                 for peer_id, peer_ws in connected_users.items():
-                    await peer_ws.send_text(json.dumps({
-                        "type": "peer-connect",
-                        "peer_id": user_id
-                    }))
+                    if peer_id != user_id:
+                        await peer_ws.send_text(json.dumps({
+                            "type": "peer-connect",
+                            "peer_id": user_id
+                        }))
+            
+            elif data["type"] == "peer-disconnect":
+                # Handle peer disconnect
+                if user_id in connected_users:
+                    del connected_users[user_id]
+                await notify_peers()
+
     except WebSocketDisconnect:
-        if user_id in connected_users: # peer disconnection
-            del connected_users[user_id]
-        for peer_ws in connected_users.values():
-            await peer_ws.send_text(json.dumps({
-                "type": "peer-disconnect",
-                "peer_id": user_id
-            }))
+        # Handle WebSocket disconnect
+        del connected_users[user_id]
+        print(f"{user_id} disconnected.")
+        await notify_peers()
+
+# Notify all peers of the updated peer list
+async def notify_peers():
+    # Send the updated peer list to all connected peers
+    for peer_id, peer_ws in connected_users.items():
+        await peer_ws.send_text(json.dumps({
+            "type": "peer-list",
+            "peers": list(connected_users.keys())
+        }))
 
 
 if __name__ == "__main__":
