@@ -1,7 +1,5 @@
-"""
-fast api + strawberry + uvicorn
-"""
 import strawberry
-from .resolver import Query, Mutation  
+from .query import Query
+from .mutation import Mutation
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
