@@ -24,27 +24,6 @@ def get_local_ip() -> str:
 def get_domain_name() -> str:
     return "dexto.com"
 
-
-##########################################################
-
-# โหลดการตั้งค่าจาก config
-conf = Config("config/config.ini")
-db_config = conf.load_db_config()
-
-# สร้าง DATABASE_URL ด้วย IP ของฐานข้อมูลเป็น 127.0.0.1
-DATABASE_URL = f"mysql+mysqlconnector://{db_config['user']}:{db_config['password']}@127.0.0.1/{db_config['database']}"
-
-# สร้าง engine สำหรับ SQLAlchemy
-engine = create_engine(DATABASE_URL, echo=True)
-
-# สร้าง session สำหรับเชื่อมต่อกับฐานข้อมูล
-SessionLocal = sessionmaker(bind=engine, autoflush=False)
-
-# กำหนด Base สำหรับการสร้าง ORM models
-Base = declarative_base()
-
-###############################################################
-
 # การตั้งค่า FastAPI
 app = FastAPI()
 
