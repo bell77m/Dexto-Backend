@@ -43,11 +43,11 @@ def run():
     domain_name = get_domain_name()
 
 
-    db_config["host"] = local_ip
-    server_config["host"] = domain_name
+    # db_config["host"] = local_ip
+    # server_config["host"] = domain_name
     
-    # db_config["host"] = "127.0.0.1"
-    # server_config["host"] = "127.0.0.1"
+    db_config["host"] = "127.0.0.1"
+    server_config["host"] = "127.0.0.1"
     
     print(f"Running server on http://{domain_name}:{server_config['port']}")
     
