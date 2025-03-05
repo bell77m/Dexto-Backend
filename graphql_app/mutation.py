@@ -25,10 +25,25 @@ class Mutation:
 
     @strawberry.mutation
     def login_user(self, email: str, password: str) -> LoginResponse:
+        # เช็คว่า email หรือ password ไม่มีค่าหรือไม่
+        if not email or not password:
+            return LoginResponse(success=False, message="Email and password are required", user=None)
+
         try:
-            user = UserGateway.login_user(email, password)
-            if user:
-                return LoginResponse(success=True, message="Login successful", user=UserType(id=user.id, display_name=user.display_name, email=user.email))
-            return LoginResponse(success=False, message="Invalid email or password", user=None)
+            # เช็คว่า email มีอยู่ในฐานข้อมูลหรือไม่
+            user = UserGateway.get_user_by_email(email)
+
+            # ถ้าไม่พบ email ในฐานข้อมูล
+            if not user:
+                return LoginResponse(success=False, message="Invalid email", user=None)
+
+            # ถ้ามี email แต่รหัสผ่านไม่ถูกต้อง
+            if not UserGateway.verify_password(user, password):
+                return LoginResponse(success=False, message="Incorrect password", user=None)
+
+            # ถ้ารหัสผ่านถูกต้อง
+            return LoginResponse(success=True, message="Login successful", user=UserType(id=user.id, display_name=user.display_name, email=user.email))
+
         except ValueError as e:
+            # กรณีเกิดข้อผิดพลาดอื่นๆ
             return LoginResponse(success=False, message=str(e), user=None)

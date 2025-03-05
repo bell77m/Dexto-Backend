@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 from graphql_app.database import SessionLocal
 from graphql_app.model import User
 from typing import Optional, List
+from sqlalchemy.exc import NoResultFound
 
+# user_gateway.py
 class UserGateway:
     @staticmethod
     def get_db():
@@ -17,13 +19,13 @@ class UserGateway:
     @classmethod
     def get_users(cls) -> List[User]:
         """ดึงข้อมูลผู้ใช้ทั้งหมด"""
-        with SessionLocal() as db:
+        with next(cls.get_db()) as db:  # ใช้ next เพื่อรับ session
             return db.query(User).all()
 
     @classmethod
     def get_user_by_id(cls, id: int) -> Optional[User]:
         """ดึงข้อมูลผู้ใช้โดย ID"""
-        with SessionLocal() as db:
+        with next(cls.get_db()) as db:
             return db.query(User).filter(User.id == id).first()
 
     @classmethod
@@ -31,7 +33,7 @@ class UserGateway:
         """เพิ่มผู้ใช้ใหม่"""
         hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
 
-        with SessionLocal() as db:
+        with next(cls.get_db()) as db:  # ใช้ next เพื่อรับ session
             if db.query(User).filter(User.email == email).first():
                 raise ValueError("Email already in use")
 
@@ -45,7 +47,7 @@ class UserGateway:
     def update_user(cls, id: int, display_name: Optional[str] = None, email: Optional[str] = None,
                     password: Optional[str] = None) -> Optional[User]:
         """อัปเดตข้อมูลผู้ใช้"""
-        with SessionLocal() as db:
+        with next(cls.get_db()) as db:  # ใช้ next เพื่อรับ session
             user = db.query(User).filter(User.id == id).first()
             if not user:
                 return None
@@ -64,7 +66,7 @@ class UserGateway:
     @classmethod
     def delete_user(cls, id: int) -> bool:
         """ลบผู้ใช้"""
-        with SessionLocal() as db:
+        with next(cls.get_db()) as db:  # ใช้ next เพื่อรับ session
             user = db.query(User).filter(User.id == id).first()
             if not user:
                 return False
@@ -76,8 +78,24 @@ class UserGateway:
     @classmethod
     def login_user(cls, email: str, password: str) -> Optional[User]:
         """ตรวจสอบการเข้าสู่ระบบ"""
-        with SessionLocal() as db:
+        with next(cls.get_db()) as db:  # ใช้ next เพื่อรับ session
             user = db.query(User).filter(User.email == email).first()
             if not user or not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
                 raise ValueError("Invalid email or password")
             return user
+
+        
+    @staticmethod
+    def get_user_by_email(email: str):
+        """ค้นหาผู้ใช้ตาม email"""
+        with next(UserGateway.get_db()) as db:
+            try:
+                user = db.query(User).filter(User.email == email).one()
+                return user
+            except NoResultFound:
+                return None
+
+    @staticmethod
+    def verify_password(user, password: str) -> bool:
+        """ตรวจสอบรหัสผ่าน"""
+        return bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))
