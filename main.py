@@ -7,8 +7,6 @@ from strawberry.fastapi import GraphQLRouter
 from config.config import Config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
-from graphql_app.model import Base
-from user_gateway import UserGateway
 from graphql_app.database import SessionLocal
 
 # ฟังก์ชันสำหรับดึง Local IP

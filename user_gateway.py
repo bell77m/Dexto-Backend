@@ -1,5 +1,4 @@
 import bcrypt
-from sqlalchemy.orm import Session
 from graphql_app.database import SessionLocal
 from graphql_app.model import User
 from typing import Optional, List
