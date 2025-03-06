@@ -49,7 +49,16 @@ class Mutation:
                 return LoginResponse(success=False, message="Incorrect password", user=None)
 
             # ถ้ารหัสผ่านถูกต้อง
-            return LoginResponse(success=True, message="Login successful", user=UserType(id=user.id, display_name=user.display_name, email=user.email))
+            return LoginResponse(
+            success=True, 
+            message="Login successful", 
+            user=UserType(
+                id=user.id, 
+                display_name=user.display_name, 
+                email=user.email,
+                profile_picture_url=user.profile_picture_url 
+            )
+        )
 
         except ValueError as e:
             # กรณีเกิดข้อผิดพลาดอื่นๆ
