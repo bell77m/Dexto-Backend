@@ -1,10 +1,10 @@
 import bcrypt
-from graphql_app.database import SessionLocal
+from sqlalchemy.orm import Session
+from graphql_app.database import SessionLocal  # เพิ่มการ import นี้
 from graphql_app.model import User
 from typing import Optional, List
 from sqlalchemy.exc import NoResultFound
 
-# user_gateway.py
 class UserGateway:
     @staticmethod
     def get_db():
@@ -28,7 +28,7 @@ class UserGateway:
             return db.query(User).filter(User.id == id).first()
 
     @classmethod
-    def add_user(cls, display_name: str, email: str, password: str) -> Optional[User]:
+    def add_user(cls, display_name: str, email: str, password: str, profile_picture_url: Optional[str] = None) -> Optional[User]:
         """เพิ่มผู้ใช้ใหม่"""
         hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
 
@@ -36,7 +36,7 @@ class UserGateway:
             if db.query(User).filter(User.email == email).first():
                 raise ValueError("Email already in use")
 
-            new_user = User(display_name=display_name, email=email, password=hashed_pw)
+            new_user = User(display_name=display_name, email=email, password=hashed_pw, profile_picture_url=profile_picture_url)
             db.add(new_user)
             db.commit()
             db.refresh(new_user)
@@ -44,7 +44,7 @@ class UserGateway:
 
     @classmethod
     def update_user(cls, id: int, display_name: Optional[str] = None, email: Optional[str] = None,
-                    password: Optional[str] = None) -> Optional[User]:
+                    password: Optional[str] = None, profile_picture_url: Optional[str] = None) -> Optional[User]:
         """อัปเดตข้อมูลผู้ใช้"""
         with next(cls.get_db()) as db:  # ใช้ next เพื่อรับ session
             user = db.query(User).filter(User.id == id).first()
@@ -57,6 +57,8 @@ class UserGateway:
                 user.email = email
             if password:
                 user.password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
+            if profile_picture_url:
+                user.profile_picture_url = profile_picture_url  # อัปเดตรูปภาพ
 
             db.commit()
             db.refresh(user)
@@ -83,9 +85,8 @@ class UserGateway:
                 raise ValueError("Invalid email or password")
             return user
 
-        
     @staticmethod
-    def get_user_by_email(email: str):
+    def get_user_by_email(email: str) -> Optional[User]:
         """ค้นหาผู้ใช้ตาม email"""
         with next(UserGateway.get_db()) as db:
             try:

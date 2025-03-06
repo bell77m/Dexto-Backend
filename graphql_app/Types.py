@@ -6,6 +6,7 @@ class UserType:
     id: int
     display_name: str
     email: str
+    profile_picture_url: str
 
 @strawberry.type
 class LoginResponse:

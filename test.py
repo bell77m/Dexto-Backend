@@ -2,8 +2,8 @@ import mysql.connector
 
 # Connect to MySQL database
 conn = mysql.connector.connect(
-    host="10.6.38.147",
-    # host="127.0.0.1",
+    # host="10.6.38.147",
+    host="127.0.0.1",
     port = 3306,
     user="root",
     password="123456",

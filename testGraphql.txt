@@ -1,13 +1,14 @@
-# query {
-#   getUsers {
-#     id
-#     displayName
-#     email
-#   }
-# }
+query {
+  getUsers {
+    id
+    displayName
+    email
+    profilePictureUrl
+  }
+}
 
 # query {
-#   getUserById(id: 1) {
+#   getUserById(id: 2) {
 #     id
 #     displayName
 #     email
@@ -16,7 +17,7 @@
 
 
 # mutation {
-#   addUser(displayName: "John Doe", email: "john@example.com", password: "password123") {
+#   addUser(displayName: "John", email: "johan@example.com", password: "password123") {
 #     id
 #     displayName
 #     email
@@ -24,7 +25,7 @@
 # }
 
 # mutation {
-#   updateUser(id: 1, displayName: "Jane Doe") {
+#   updateUser(id: 1, displayName: "Jane D") {
 #     id
 #     displayName
 #     email
