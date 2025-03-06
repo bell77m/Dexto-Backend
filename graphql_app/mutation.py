@@ -7,8 +7,7 @@ from .types import UserType, LoginResponse
 class Mutation:
     @strawberry.mutation
     def add_user(self, display_name: str, email: str, password: str, profile_picture_url: Optional[str] = None) -> Optional[UserType]:
-        # ถ้าไม่ส่ง `profile_picture_url` ให้ใช้ค่า Default
-
+        """เพิ่มผู้ใช้ใหม่"""
         user = UserGateway.add_user(display_name, email, password, profile_picture_url)
         if user:
             return UserType(
@@ -20,10 +19,11 @@ class Mutation:
         return None
 
     @strawberry.mutation
-    def update_user(self, id: int, display_name: Optional[str] = None, email: Optional[str] = None, password: Optional[str] = None) -> Optional[UserType]:
-        user = UserGateway.update_user(id, display_name, email, password)
+    def update_user(self, id: int, display_name: Optional[str] = None, email: Optional[str] = None, password: Optional[str] = None, profile_picture_url: Optional[str] = None) -> Optional[UserType]:
+        """อัปเดตข้อมูลผู้ใช้"""
+        user = UserGateway.update_user(id, display_name, email, password, profile_picture_url)
         if user:
-            return UserType(id=user.id, display_name=user.display_name, email=user.email)
+            return UserType(id=user.id, display_name=user.display_name, email=user.email, profile_picture_url=user.profile_picture_url)
         return None
 
     @strawberry.mutation
@@ -63,3 +63,4 @@ class Mutation:
         except ValueError as e:
             # กรณีเกิดข้อผิดพลาดอื่นๆ
             return LoginResponse(success=False, message=str(e), user=None)
+        

@@ -28,15 +28,16 @@ class UserGateway:
             return db.query(User).filter(User.id == id).first()
 
     @classmethod
-    def add_user(cls, display_name: str, email: str, password: str, profile_picture_url: Optional[str] = None) -> Optional[User]:
+    def add_user(cls, display_name: str, email: str, password: str) -> Optional[User]:
         """เพิ่มผู้ใช้ใหม่"""
         hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
 
-        with next(cls.get_db()) as db:  # ใช้ next เพื่อรับ session
+        with next(cls.get_db()) as db:
             if db.query(User).filter(User.email == email).first():
                 raise ValueError("Email already in use")
 
-            new_user = User(display_name=display_name, email=email, password=hashed_pw, profile_picture_url=profile_picture_url)
+            # ไม่ต้องส่งค่า profile_picture_url เพราะมันจะใช้ default จาก Model
+            new_user = User(display_name=display_name, email=email, password=hashed_pw)
             db.add(new_user)
             db.commit()
             db.refresh(new_user)
@@ -99,3 +100,5 @@ class UserGateway:
     def verify_password(user, password: str) -> bool:
         """ตรวจสอบรหัสผ่าน"""
         return bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))
+
+    

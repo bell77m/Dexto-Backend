@@ -22,7 +22,7 @@ class User(Base):
     profile_picture_url = Column(
         String(500), 
         nullable=False, 
-        default="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_640.png"
+        default="https://static.vecteezy.com/system/resources/thumbnails/006/911/398/small_2x/rainbow-waves-background-free-vector.jpg"
     )
 
     def __repr__(self):
