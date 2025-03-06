@@ -7,16 +7,17 @@ from .types import UserType, LoginResponse
 class Mutation:
     @strawberry.mutation
     def add_user(self, display_name: str, email: str, password: str, profile_picture_url: Optional[str] = None) -> Optional[UserType]:
-        """เพิ่มผู้ใช้ใหม่"""
+        # ถ้าไม่ได้ส่ง profile_picture_url, ใช้ค่า default
         user = UserGateway.add_user(display_name, email, password, profile_picture_url)
         if user:
             return UserType(
                 id=user.id, 
                 display_name=user.display_name, 
-                email=user.email,
+                email=user.email, 
                 profile_picture_url=user.profile_picture_url
             )
         return None
+
 
     @strawberry.mutation
     def update_user(self, id: int, display_name: Optional[str] = None, email: Optional[str] = None, password: Optional[str] = None, profile_picture_url: Optional[str] = None) -> Optional[UserType]:
