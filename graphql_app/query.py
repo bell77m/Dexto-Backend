@@ -3,7 +3,7 @@ from typing import List, Optional
 from user_gateway import UserGateway
 from friend_gateway import FriendGateway
 from notification_gateway import NotificationGateway
-from .Types import  UserType, NotificationType
+from .Types import  UserType, NotificationType, FriendRequestType
 from graphql_app.database import SessionLocal
 from graphql_app.model import User, Friend
 
@@ -87,4 +87,21 @@ class Query:
                     request_sent=user.id in sent_requests_ids  # ✅ เช็คว่ามีคำขอ pending ไหม
                 ) for user in users
             ]
+            
+    @strawberry.field
+    def get_friend_requests(self, user_id: int) -> List[FriendRequestType]:
+        """ดึงรายการคำขอที่ส่งถึงปลายทาง"""
+        requests = FriendGateway.get_friend_requests(user_id)
+        return [
+            FriendRequestType(
+                id=req.id,
+                sender=UserType(
+                    id=req.user.id,
+                    display_name=req.user.display_name,
+                    email=req.user.email,
+                    profile_picture_url=req.user.profile_picture_url
+                )
+            ) for req in requests
+        ]
+
 

@@ -1,6 +1,7 @@
 from graphql_app.model import User, Friend, Notification
 from graphql_app.database import SessionLocal
 from sqlalchemy.sql import func
+from sqlalchemy.orm import joinedload
 from typing import Optional, List
 
 class FriendGateway:
@@ -121,3 +122,16 @@ class FriendGateway:
             db.delete(friendship)
             db.commit()
             return True
+    
+    @classmethod
+    def get_friend_requests(cls, user_id: int):
+        """ดึงรายการคำขอเป็นเพื่อนที่ส่งถึงปลายทาง (ผู้ใช้)"""
+        with SessionLocal() as db:
+            requests = db.query(Friend).options(
+                joinedload(Friend.user)  # ✅ โหลด user พร้อมกัน
+            ).filter(
+                Friend.friend_id == user_id,  # ✅ กรองให้เฉพาะคำขอที่ส่งถึงปลายทาง
+                Friend.status == "pending"
+            ).all()
+
+            return requests

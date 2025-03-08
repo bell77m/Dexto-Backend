@@ -1,8 +1,34 @@
-from graphql_app.model import Notification, User
+from graphql_app.model import Notification, User, Friend
 from graphql_app.database import SessionLocal
 from typing import List, Dict
 
 class NotificationGateway:
+     
+    @classmethod
+    def search_users(cls, query: str, user_id: int):
+        """ค้นหาผู้ใช้ที่ไม่ใช่ตัวเอง พร้อมตรวจสอบว่าเคยส่งคำขอหรือยัง"""
+        with SessionLocal() as db:
+            users = db.query(User).filter(
+                (User.display_name.ilike(f"%{query}%")) | 
+                (User.email.ilike(f"%{query}%")),
+                User.id != user_id  # ✅ กรองตัวเองออก
+            ).all()
+
+            friends = db.query(Friend).filter(
+                (Friend.user_id == user_id) | (Friend.friend_id == user_id)
+            ).all()
+
+            # ✅ ตรวจสอบว่า user เคยส่งคำขอแล้ว หรือได้รับคำขอจากเป้าหมายแล้วหรือไม่
+            friend_requests = {f"{f.user_id}-{f.friend_id}": f.status for f in friends}
+
+            for user in users:
+                user.requestSent = (
+                    friend_requests.get(f"{user_id}-{user.id}") == "pending" or
+                    friend_requests.get(f"{user.id}-{user_id}") == "pending"
+                )
+
+            return users
+        
     @classmethod
     def get_notifications(cls, user_id: int) -> List[Dict]:
         """ ดึง Notification พร้อมข้อมูลของผู้ส่ง """

@@ -28,6 +28,11 @@ class FriendType:
 class FriendRequestResponse:
     success: bool
     message: str
+    
+@strawberry.type
+class FriendRequestType:
+    id: int
+    sender: UserType
 
 @strawberry.type
 class NotificationType:
