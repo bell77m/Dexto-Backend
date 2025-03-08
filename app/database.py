@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from typing import Generator
 
 
-load_dotenv("../.env")
+load_dotenv(".env")
 
 
 logging.basicConfig(level=logging.INFO)
