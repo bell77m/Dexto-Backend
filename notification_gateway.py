@@ -5,7 +5,7 @@ from typing import List
 class NotificationGateway:
     @classmethod
     def get_notifications(cls, user_id: int) -> List[Notification]:
-        """ ดึง Notification ของผู้ใช้ """
+        """ ดึง Notification เฉพาะของผู้ใช้ปลายทาง """
         with SessionLocal() as db:
             return db.query(Notification).filter(Notification.user_id == user_id).order_by(Notification.sent_at.desc()).all()
 

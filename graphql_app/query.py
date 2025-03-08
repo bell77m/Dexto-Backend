@@ -47,7 +47,7 @@ class Query:
         
     @strawberry.field
     def get_notifications(self, user_id: int) -> List[NotificationType]:
-        """ ดึงการแจ้งเตือนทั้งหมดของผู้ใช้ """
+        """ ดึง Notification เฉพาะของผู้ใช้ """
         notifications = NotificationGateway.get_notifications(user_id)
         return [
             NotificationType(
