@@ -48,3 +48,40 @@ query {
 # mutation {
 #   deleteUser(id: 1)
 # }
+
+mutation {
+  sendFriendRequest(userId: 1, friendId: 2) {
+    success
+    message
+  }
+}
+
+mutation {
+  acceptFriendRequest(userId: 2, friendId: 1) {
+    success
+    message
+  }
+}
+
+mutation {
+  rejectFriendRequest(userId: 2, friendId: 1) {
+    success
+    message
+  }
+}
+
+mutation {
+  cancelFriendRequest(userId: 1, friendId: 2) {
+    success
+    message
+  }
+}
+
+query {
+  getFriends(userId: 1) {
+    id
+    displayName
+    email
+    profilePictureUrl
+  }
+}

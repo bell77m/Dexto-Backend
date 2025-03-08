@@ -1,7 +1,8 @@
 import strawberry
 from typing import List, Optional
 from user_gateway import UserGateway
-from .types import UserType
+from friend_gateway import FriendGateway
+from .Types import UserType
 
 @strawberry.type
 class Query:
@@ -29,3 +30,16 @@ class Query:
                 profile_picture_url=user.profile_picture_url  # ✅ เพิ่มฟิลด์นี้
             )
         return None
+    
+
+    @strawberry.field
+    def get_friends(self, user_id: int) -> List[UserType]:
+        friends = FriendGateway.get_friends(user_id)
+        return [
+            UserType(
+                id=friend.id,
+                display_name=friend.display_name,
+                email=friend.email,
+                profile_picture_url=friend.profile_picture_url
+            ) for friend in friends
+        ]

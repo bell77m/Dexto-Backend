@@ -13,3 +13,17 @@ class LoginResponse:
     success: bool
     message: str
     user: Optional[UserType]
+
+@strawberry.type
+class FriendType:
+    id: int
+    user_id: int
+    friend_id: int
+    status: str
+    created_at: str
+    accepted_at: Optional[str] = None
+
+@strawberry.type
+class FriendRequestResponse:
+    success: bool
+    message: str
