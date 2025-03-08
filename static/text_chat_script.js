@@ -6,7 +6,7 @@ async function startWebSocket() {
         let response = await fetch("/server-ip");
         let data = await response.json();
         let serverIP = data.ip;
-        let ws = new WebSocket(`ws://${serverIP}:8000/ws/${client_id}`);
+        let ws = new WebSocket(`wss://${serverIP}:8000/ws/${client_id}`);
         console.log("connected to WebSocket at:", serverIP);
 
         ws.onmessage = function(event) {
