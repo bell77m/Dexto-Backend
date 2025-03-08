@@ -21,13 +21,13 @@ async function connectToWebsocket(userId) {
                     connectToPeer(peerId);
                 }
             });
-        } 
+        }
         else if (message.type === "peer-connect") {
             // A new user joined, connect to them
             if (!peers[message.peer_id]) {
                 connectToPeer(message.peer_id);
             }
-        } 
+        }
         else if (message.type === "peer-disconnect") {
             // A user left, remove them
             removePeer(message.peer_id);

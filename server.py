@@ -39,11 +39,14 @@ class ConnectionManager:
         for connection in self.active_connections:
             await connection.send_text(message)
 
+
 manager = ConnectionManager()
+
 
 @app.get("/")
 async def get():
     return HTMLResponse(content=read_html("text_chat.html"))
+
 
 @app.get("/server-ip")
 async def get_server_ip_endpoint():
@@ -69,55 +72,23 @@ async def get():
     return HTMLResponse(content=read_html("voice_chat.html"))
 
 
-connected_users = {}
 # vc endpoint
+connected_users = {}
 @app.websocket("/ws/vc/{user_id}")
-async def vc_websocket_endpoint(websocket: WebSocket, user_id: str):
-    await websocket.accept()
-    connected_users[user_id] = websocket
-
-    # Send the list of existing peers when a new user connects
-    await websocket.send_json({"type": "peer-list", "peers": list(connected_users.keys())})
-
-    # Notify all peers about the new user
-    await notify_peers()
-
+async def call_endpoint(websocket: WebSocket, user_id: str):
+    await manager.connect(websocket)
     try:
         while True:
-            # Receive messages from the client
             message = await websocket.receive_text()
-            data = json.loads(message)
-            
-            if data["type"] == "peer-connect":
-                target_peer_id = data["peer_id"]
-                # Send peer connect message to all other peers
-                for peer_id, peer_ws in connected_users.items():
-                    if peer_id != user_id:
-                        await peer_ws.send_text(json.dumps({
-                            "type": "peer-connect",
-                            "peer_id": user_id
-                        }))
-            
-            elif data["type"] == "peer-disconnect":
-                # Handle peer disconnect
-                if user_id in connected_users:
-                    del connected_users[user_id]
-                await notify_peers()
-
+            message_data = json.loads(message)
+            target_peer = message_data.get("target")
+            if target_peer == "all":
+                await manager.broadcast(json.dumps(message_data), sender_id=user_id)
+            elif target_peer in manager.active_connections:
+                await manager.send_personal_message(json.dumps(message_data), target_peer)
     except WebSocketDisconnect:
-        # Handle WebSocket disconnect
-        del connected_users[user_id]
-        print(f"{user_id} disconnected.")
-        await notify_peers()
-
-# Notify all peers of the updated peer list
-async def notify_peers():
-    # Send the updated peer list to all connected peers
-    for peer_id, peer_ws in connected_users.items():
-        await peer_ws.send_text(json.dumps({
-            "type": "peer-list",
-            "peers": list(connected_users.keys())
-        }))
+        manager.disconnect(user_id)
+        await manager.broadcast(json.dumps({"type": "peer-disconnect", "peer_id": user_id}))
 
 
 if __name__ == "__main__":
