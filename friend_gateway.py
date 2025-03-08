@@ -65,7 +65,7 @@ class FriendGateway:
 
     @classmethod
     def reject_friend_request(cls, user_id: int, friend_id: int) -> bool:
-        """ ปฏิเสธคำขอเป็นเพื่อน """
+        """ ปฏิเสธคำขอเป็นเพื่อน (และลบออกจากฐานข้อมูล) """
         with SessionLocal() as db:
             request = db.query(Friend).filter(
                 (Friend.user_id == friend_id) & (Friend.friend_id == user_id) & (Friend.status == "pending")
@@ -74,7 +74,8 @@ class FriendGateway:
             if not request:
                 return False
 
-            request.status = "rejected"
+            # ลบคำขอเป็นเพื่อนออกจากฐานข้อมูล
+            db.delete(request)
             db.commit()
             return True
 

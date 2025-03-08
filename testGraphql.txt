@@ -1,11 +1,11 @@
-query {
-  getUsers {
-    id
-    displayName
-    email
-    profilePictureUrl
-  }
-}
+# query {
+#   getUsers {
+#     id
+#     displayName
+#     email
+#     profilePictureUrl
+#   }
+# }
 
 # query {
 #   getUserById(id: 2) {
@@ -49,39 +49,39 @@ query {
 #   deleteUser(id: 1)
 # }
 
-mutation {
-  sendFriendRequest(userId: 1, friendId: 2) {
-    success
-    message
-  }
-}
+# mutation {
+#   sendFriendRequest(userId: 4, friendId: 2) {
+#     success
+#     message
+#   }
+# }
 
-mutation {
-  acceptFriendRequest(userId: 2, friendId: 1) {
-    success
-    message
-  }
-}
+# mutation {
+#   acceptFriendRequest(userId: 4, friendId: 2) {
+#     success
+#     message
+#   }
+# }
 
-mutation {
-  rejectFriendRequest(userId: 2, friendId: 1) {
-    success
-    message
-  }
-}
+# mutation {
+#   rejectFriendRequest(userId: 4, friendId: 2) {
+#     success
+#     message
+#   }
+# }
 
-mutation {
-  cancelFriendRequest(userId: 1, friendId: 2) {
-    success
-    message
-  }
-}
+# mutation {
+#   cancelFriendRequest(userId: 2, friendId: 1) {
+#     success
+#     message
+#   }
+# }
 
-query {
-  getFriends(userId: 1) {
-    id
-    displayName
-    email
-    profilePictureUrl
-  }
-}
+# query {
+#   getFriends(userId: 2) {
+#     id
+#     displayName
+#     email
+#     profilePictureUrl
+#   }
+# }
