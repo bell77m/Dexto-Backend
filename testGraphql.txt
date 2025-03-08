@@ -50,14 +50,14 @@
 # }
 
 # mutation {
-#   sendFriendRequest(userId: 4, friendId: 2) {
+#   sendFriendRequest(userId: 2, friendId: 1) {
 #     success
 #     message
 #   }
 # }
 
 # mutation {
-#   acceptFriendRequest(userId: 4, friendId: 2) {
+#   acceptFriendRequest(userId: 1, friendId: 2) {
 #     success
 #     message
 #   }
@@ -86,15 +86,26 @@
 #   }
 # }
 
-query {
-  getNotifications(userId: 1) {
-    id
-    type
-    sent_at
-    is_read
-  }
-}
+# query {
+#   getNotifications(userId: 2) {
+#     type
+#     senderId
+#     senderName
+#     senderEmail
+#     sentAt
+#   }
+# }
 
-mutation {
-  markNotificationAsRead(notificationId: 5)
-}
+# mutation {
+#   markNotificationAsRead(notificationId: 5)
+# }
+
+# query {
+#   searchUsers(query: "dom", userId: 4) {
+#     id
+#     displayName
+#     email
+#     profilePictureUrl
+#     requestSent
+#   }
+# }

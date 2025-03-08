@@ -58,7 +58,8 @@ class Mutation:
                 id=user.id, 
                 display_name=user.display_name, 
                 email=user.email,
-                profile_picture_url=user.profile_picture_url 
+                profile_picture_url=user.profile_picture_url, 
+                request_sent=False
             )
         )
 
