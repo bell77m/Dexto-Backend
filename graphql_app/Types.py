@@ -7,6 +7,7 @@ class UserType:
     display_name: str
     email: str
     profile_picture_url: str
+    request_sent: bool
 
 @strawberry.type
 class LoginResponse:

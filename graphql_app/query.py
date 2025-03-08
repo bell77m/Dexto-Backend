@@ -5,7 +5,7 @@ from friend_gateway import FriendGateway
 from notification_gateway import NotificationGateway
 from .Types import  UserType, NotificationType
 from graphql_app.database import SessionLocal
-from graphql_app.model import User
+from graphql_app.model import User, Friend
 
 @strawberry.type
 class Query:
@@ -63,20 +63,28 @@ class Query:
                 is_read=noti["is_read"]
             ) for noti in notifications
         ]
-    
+
     @strawberry.field
-    def search_users(self, query: str) -> List[UserType]:
-        """ ค้นหาผู้ใช้จาก display_name หรือ email """
+    def search_users(self, query: str, user_id: int) -> List[UserType]:
+        """ ค้นหาผู้ใช้จาก display_name หรือ email และไม่แสดงตัวเอง """
         with SessionLocal() as db:
             users = db.query(User).filter(
-                (User.display_name.ilike(f"%{query}%")) | 
-                (User.email.ilike(f"%{query}%"))
+                ((User.display_name.ilike(f"%{query}%")) | (User.email.ilike(f"%{query}%"))) &
+                (User.id != user_id)  # ✅ กรองตัวเองออก
             ).all()
+
+            sent_requests = db.query(Friend.friend_id).filter(
+                (Friend.user_id == user_id) & (Friend.status == "pending")
+            ).all()
+            sent_requests_ids = {f[0] for f in sent_requests}
+
             return [
                 UserType(
                     id=user.id,
                     display_name=user.display_name,
                     email=user.email,
-                    profile_picture_url=user.profile_picture_url
+                    profile_picture_url=user.profile_picture_url,
+                    request_sent=user.id in sent_requests_ids  # ✅ เช็คว่ามีคำขอ pending ไหม
                 ) for user in users
             ]
+
