@@ -87,7 +87,7 @@ class Query:
                     request_sent=user.id in sent_requests_ids  # ✅ เช็คว่ามีคำขอ pending ไหม
                 ) for user in users
             ]
-            
+    
     @strawberry.field
     def get_friend_requests(self, user_id: int) -> List[FriendRequestType]:
         """ดึงรายการคำขอที่ส่งถึงปลายทาง"""
