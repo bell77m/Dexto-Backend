@@ -13,28 +13,40 @@ class FriendGateway:
             yield db
         finally:
             db.close()
-
+    
     @classmethod
     def send_friend_request(cls, user_id: int, friend_id: int) -> Optional[Friend]:
-        """ ส่งคำขอเป็นเพื่อน """
+        """ ส่งคำขอเป็นเพื่อน (หากถูกปฏิเสธไปก่อนหน้านี้ จะสามารถส่งใหม่ได้) """
         with SessionLocal() as db:
             if user_id == friend_id:
                 raise ValueError("You cannot send a friend request to yourself.")
-            
+
             existing_request = db.query(Friend).filter(
                 ((Friend.user_id == user_id) & (Friend.friend_id == friend_id)) |
                 ((Friend.user_id == friend_id) & (Friend.friend_id == user_id))
             ).first()
 
             if existing_request:
-                raise ValueError("Friend request already exists.")
+                if existing_request.status == "rejected":
+                    # ถ้าถูกปฏิเสธมาก่อน → อัปเดตเป็น pending ใหม่
+                    existing_request.status = "pending"
+                    existing_request.created_at = func.now()
+                    existing_request.accepted_at = None
+                    db.commit()
+                    db.refresh(existing_request)
+                    return existing_request
+                elif existing_request.status in ["pending", "accepted"]:
+                    # ป้องกันการส่งซ้ำ
+                    raise ValueError("Friend request already exists.")
 
+            # สร้างคำขอใหม่ (หากไม่มีเรคคอร์ดอยู่แล้ว)
             new_request = Friend(user_id=user_id, friend_id=friend_id, status="pending")
             db.add(new_request)
             db.commit()
             db.refresh(new_request)
             return new_request
-
+        
+ 
     @classmethod
     def accept_friend_request(cls, user_id: int, friend_id: int) -> bool:
         """ ยอมรับคำขอเป็นเพื่อน """
