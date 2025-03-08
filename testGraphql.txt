@@ -85,3 +85,16 @@
 #     profilePictureUrl
 #   }
 # }
+
+query {
+  getNotifications(userId: 1) {
+    id
+    type
+    sent_at
+    is_read
+  }
+}
+
+mutation {
+  markNotificationAsRead(notificationId: 5)
+}

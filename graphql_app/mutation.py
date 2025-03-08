@@ -93,3 +93,8 @@ class Mutation:
         if FriendGateway.cancel_friend_request(user_id, friend_id):
             return FriendRequestResponse(success=True, message="Friend request canceled")
         return FriendRequestResponse(success=False, message="Friend request not found or already canceled")
+    
+    @strawberry.mutation
+    def mark_notification_as_read(self, notification_id: int) -> bool:
+        """ ทำเครื่องหมายว่าอ่าน Notification แล้ว """
+        return NotificationGateway.mark_as_read(notification_id)

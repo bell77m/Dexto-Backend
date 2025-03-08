@@ -27,3 +27,12 @@ class FriendType:
 class FriendRequestResponse:
     success: bool
     message: str
+
+@strawberry.type
+class NotificationType:
+    id: int
+    user_id: int
+    sender_id: int
+    type: str
+    sent_at: str
+    is_read: bool

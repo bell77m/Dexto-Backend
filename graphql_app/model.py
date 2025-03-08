@@ -50,3 +50,19 @@ class Friend(Base):
 
     def __repr__(self):
         return f"<Friend(user_id={self.user_id}, friend_id={self.friend_id}, status={self.status})>"
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    type = Column(Enum("friend_request", "friend_accept", "project_invite"), nullable=False)
+    sent_at = Column(DateTime, default=func.now())
+    is_read = Column(Boolean, default=False)
+
+    user = relationship("User", foreign_keys=[user_id])
+    sender = relationship("User", foreign_keys=[sender_id])
+
+    def __repr__(self):
+        return f"<Notification(user_id={self.user_id}, sender_id={self.sender_id}, type={self.type})>"

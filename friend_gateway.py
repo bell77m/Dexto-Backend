@@ -1,22 +1,12 @@
-from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
+from graphql_app.model import User, Friend, Notification
 from graphql_app.database import SessionLocal
-from graphql_app.model import User, Friend
+from sqlalchemy.sql import func
 from typing import Optional, List
 
 class FriendGateway:
-    @staticmethod
-    def get_db():
-        """จัดการ Session ของ Database"""
-        db = SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-    
     @classmethod
     def send_friend_request(cls, user_id: int, friend_id: int) -> Optional[Friend]:
-        """ ส่งคำขอเป็นเพื่อน (หากถูกปฏิเสธไปก่อนหน้านี้ จะสามารถส่งใหม่ได้) """
+        """ ส่งคำขอเป็นเพื่อน และสร้าง Notification """
         with SessionLocal() as db:
             if user_id == friend_id:
                 raise ValueError("You cannot send a friend request to yourself.")
@@ -27,29 +17,27 @@ class FriendGateway:
             ).first()
 
             if existing_request:
-                if existing_request.status == "rejected":
-                    # ถ้าถูกปฏิเสธมาก่อน → อัปเดตเป็น pending ใหม่
-                    existing_request.status = "pending"
-                    existing_request.created_at = func.now()
-                    existing_request.accepted_at = None
-                    db.commit()
-                    db.refresh(existing_request)
-                    return existing_request
-                elif existing_request.status in ["pending", "accepted"]:
-                    # ป้องกันการส่งซ้ำ
-                    raise ValueError("Friend request already exists.")
+                raise ValueError("Friend request already exists.")
 
-            # สร้างคำขอใหม่ (หากไม่มีเรคคอร์ดอยู่แล้ว)
+            # บันทึกคำขอเป็นเพื่อน
             new_request = Friend(user_id=user_id, friend_id=friend_id, status="pending")
             db.add(new_request)
+
+            # บันทึกการแจ้งเตือน
+            new_notification = Notification(
+                user_id=friend_id,
+                sender_id=user_id,
+                type="friend_request"
+            )
+            db.add(new_notification)
+
             db.commit()
             db.refresh(new_request)
             return new_request
-        
- 
+
     @classmethod
     def accept_friend_request(cls, user_id: int, friend_id: int) -> bool:
-        """ ยอมรับคำขอเป็นเพื่อน """
+        """ ยอมรับคำขอเป็นเพื่อน และสร้าง Notification """
         with SessionLocal() as db:
             request = db.query(Friend).filter(
                 (Friend.user_id == friend_id) & (Friend.friend_id == user_id) & (Friend.status == "pending")
@@ -60,6 +48,15 @@ class FriendGateway:
 
             request.status = "accepted"
             request.accepted_at = func.now()
+
+            # บันทึกการแจ้งเตือน
+            new_notification = Notification(
+                user_id=friend_id,
+                sender_id=user_id,
+                type="friend_accept"
+            )
+            db.add(new_notification)
+
             db.commit()
             return True
 
@@ -95,7 +92,7 @@ class FriendGateway:
             return True
 
     @classmethod
-    def get_friends(cls, user_id: int) -> List[User]:
+    def get_friends(cls, user_id: int) -> List[User]:  # ✅ ตอนนี้ User ถูก import แล้ว!
         """ ดึงรายชื่อเพื่อนทั้งหมดที่เป็น 'accepted' """
         with SessionLocal() as db:
             friends = db.query(Friend).filter(

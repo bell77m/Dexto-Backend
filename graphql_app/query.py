@@ -2,7 +2,8 @@ import strawberry
 from typing import List, Optional
 from user_gateway import UserGateway
 from friend_gateway import FriendGateway
-from .Types import UserType
+from notification_gateway import NotificationGateway
+from .Types import UserType, NotificationType
 
 @strawberry.type
 class Query:
@@ -42,4 +43,19 @@ class Query:
                 email=friend.email,
                 profile_picture_url=friend.profile_picture_url
             ) for friend in friends
+        ]
+        
+    @strawberry.field
+    def get_notifications(self, user_id: int) -> List[NotificationType]:
+        """ ดึงการแจ้งเตือนทั้งหมดของผู้ใช้ """
+        notifications = NotificationGateway.get_notifications(user_id)
+        return [
+            NotificationType(
+                id=noti.id,
+                user_id=noti.user_id,
+                sender_id=noti.sender_id,
+                type=noti.type,
+                sent_at=str(noti.sent_at),
+                is_read=noti.is_read
+            ) for noti in notifications
         ]
