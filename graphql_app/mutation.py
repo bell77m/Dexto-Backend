@@ -66,8 +66,13 @@ class Mutation:
         except ValueError as e:
             # กรณีเกิดข้อผิดพลาดอื่นๆ
             return LoginResponse(success=False, message=str(e), user=None)
-        
- 
+     
+    @strawberry.mutation    
+    def logout_user(self) -> bool:
+        """ ออกจากระบบ (Logout) """
+        # ถ้ามีระบบ Session ต้องทำการลบ Session ที่นี่ (เช่น Redis หรือ Database)
+        # ถ้ามีระบบ JWT ให้ลบ Token หรือทำให้ Token ใช้ไม่ได้ (เช่น Blacklist)
+        return True  # ✅ คืนค่า success = True
  
     @strawberry.mutation
     def send_friend_request(self, user_id: int, friend_id: int) -> FriendRequestResponse:

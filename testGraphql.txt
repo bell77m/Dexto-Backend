@@ -1,11 +1,11 @@
-# query {
-#   getUsers {
-#     id
-#     displayName
-#     email
-#     profilePictureUrl
-#   }
-# }
+query {
+  getUsers {
+    id
+    displayName
+    email
+    profilePictureUrl
+  }
+}
 
 # query {
 #   getUserById(id: 2) {
@@ -43,6 +43,10 @@
 #       profilePictureUrl
 #     }
 #   }
+# }
+
+# mutation {
+#   logoutUser
 # }
 
 # mutation {
