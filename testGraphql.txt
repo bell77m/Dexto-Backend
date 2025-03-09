@@ -17,7 +17,7 @@ query {
 
 
 # mutation {
-#   addUser(displayName: "dom", email: "dom@gmail.com", password: "123456") {
+#   addUser(displayName: "Dom4", email: "dom4@gmail.com", password: "123456") {
 #     id
 #     displayName
 #     email
@@ -29,6 +29,13 @@ query {
 #     id
 #     displayName
 #     email
+#   }
+# }
+
+# mutation {
+#   updateUserAvatar(id: 9, profilePictureUrl: "https://media-hosting.imagekit.io//d1445da46d0b4630/screenshot_1741452399903.png?Expires=1836060401&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=V7um6nNEX4DCkvIqquYn5KvWVtfEKa0xv84rr00wdfOvb~L6i4tHQ2gO3Lg4xNXndrYq~GBja-0cywLpbt~yFeRj4rQjIPGvo-rdBT58jcl1jxQ5nBFR0TUBzLXgzxEkvXXPadyipMdsgtBMsTiLF6Hi6LpXJsM05iqr1I2osfLnwzNOzeJk1hFH6YwYgDXK2R~Q2ALBhXKF~CqJMFu6i9nKkfMve463hVJGUfaYSdSVU7aUIlt~EUnUSR7O3U6iIywqtK18itpidZjcLR1JmZMuj5xkSV4aUZUTiyTOewuctobXOBqPf03HVLn5cBHa7kEZ5FgTGKKcceExAjJogQ__") {
+#     id
+#     profilePictureUrl
 #   }
 # }
 
@@ -82,7 +89,7 @@ query {
 # }
 
 # query {
-#   getFriends(userId: 2) {
+#   getFriends(userId: 8) {
 #     id
 #     displayName
 #     email
@@ -91,7 +98,18 @@ query {
 # }
 
 # query {
-#   getNotifications(userId: 2) {
+#   getFriendRequests(userId: 8) {
+#     sender {
+#       id
+#       displayName
+#       email
+#       profilePictureUrl
+#     }
+#   }
+# }
+
+# query {
+#   getNotifications(userId: 8) {
 #     type
 #     senderId
 #     senderName
@@ -105,7 +123,7 @@ query {
 # }
 
 # query {
-#   searchUsers(query: "dom", userId: 4) {
+#   searchUsers(query: "crea", userId: 7) {
 #     id
 #     displayName
 #     email
