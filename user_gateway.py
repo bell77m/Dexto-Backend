@@ -54,6 +54,19 @@ class UserGateway:
             db.commit()
             db.refresh(user)
             return user
+  
+    @classmethod
+    def update_user_avatar(cls, user_id: int, profile_picture_url: str) -> Optional[User]:
+        """อัปเดตรูปโปรไฟล์ของผู้ใช้"""
+        with SessionLocal() as db:
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user:
+                return None
+            
+            user.profile_picture_url = profile_picture_url
+            db.commit()
+            db.refresh(user)
+            return user
 
     @classmethod
     def delete_user(cls, id: int) -> bool:
