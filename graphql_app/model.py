@@ -22,7 +22,7 @@ class User(Base):
     profile_picture_url = Column(
         String(500), 
         nullable=False, 
-        default="https://static.vecteezy.com/system/resources/thumbnails/006/911/398/small_2x/rainbow-waves-background-free-vector.jpg"
+        default="https://t4.ftcdn.net/jpg/00/64/67/63/360_F_64676383_LdbmhiNM6Ypzb3FM4PPuFP9rHe7ri8Ju.webp"
     )
 
     friends = relationship("Friend", back_populates="user", foreign_keys="Friend.user_id")
