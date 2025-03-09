@@ -67,26 +67,19 @@ class Query:
     @strawberry.field
     def search_users(self, query: str, user_id: int) -> List[UserType]:
         """ ค้นหาผู้ใช้จาก display_name หรือ email และไม่แสดงตัวเอง """
-        with SessionLocal() as db:
-            users = db.query(User).filter(
-                ((User.display_name.ilike(f"%{query}%")) | (User.email.ilike(f"%{query}%"))) &
-                (User.id != user_id)  # ✅ กรองตัวเองออก
-            ).all()
-
-            sent_requests = db.query(Friend.friend_id).filter(
-                (Friend.user_id == user_id) & (Friend.status == "pending")
-            ).all()
-            sent_requests_ids = {f[0] for f in sent_requests}
-
-            return [
-                UserType(
-                    id=user.id,
-                    display_name=user.display_name,
-                    email=user.email,
-                    profile_picture_url=user.profile_picture_url,
-                    request_sent=user.id in sent_requests_ids  # ✅ เช็คว่ามีคำขอ pending ไหม
-                ) for user in users
-            ]
+        users = NotificationGateway.search_users(query, user_id)
+        return [
+            UserType(
+                id=user["id"],
+                display_name=user["displayName"],
+                email=user["email"],
+                profile_picture_url=user["profilePictureUrl"],
+                request_sent=user["requestSent"],
+                request_received=user["requestReceived"],  # ✅ ดึงค่า requestReceived
+                is_friend=user["isFriend"],  # ✅ ดึงค่า isFriend
+            ) 
+            for user in users
+        ]
     
     @strawberry.field
     def get_friend_requests(self, user_id: int) -> List[FriendRequestType]:

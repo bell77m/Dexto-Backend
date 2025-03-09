@@ -8,6 +8,8 @@ class UserType:
     email: str
     profile_picture_url: str
     request_sent: bool = False
+    request_received: bool = False
+    is_friend: bool = False
 
 @strawberry.type
 class LoginResponse:
