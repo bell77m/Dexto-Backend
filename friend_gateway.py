@@ -93,7 +93,7 @@ class FriendGateway:
             return True
 
     @classmethod
-    def get_friends(cls, user_id: int) -> List[User]:  # ✅ ตอนนี้ User ถูก import แล้ว!
+    def get_friends(cls, user_id: int) -> List[User]:  
         """ ดึงรายชื่อเพื่อนทั้งหมดที่เป็น 'accepted' """
         with SessionLocal() as db:
             friends = db.query(Friend).filter(
@@ -128,9 +128,9 @@ class FriendGateway:
         """ดึงรายการคำขอเป็นเพื่อนที่ส่งถึงปลายทาง (ผู้ใช้)"""
         with SessionLocal() as db:
             requests = db.query(Friend).options(
-                joinedload(Friend.user)  # ✅ โหลด user พร้อมกัน
+                joinedload(Friend.user) 
             ).filter(
-                Friend.friend_id == user_id,  # ✅ กรองให้เฉพาะคำขอที่ส่งถึงปลายทาง
+                Friend.friend_id == user_id,  
                 Friend.status == "pending"
             ).all()
 

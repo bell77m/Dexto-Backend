@@ -12,7 +12,7 @@ class NotificationGateway:
             users = db.query(User).filter(
                 (User.display_name.ilike(f"%{query}%")) | 
                 (User.email.ilike(f"%{query}%")),
-                User.id != user_id  # ✅ กรองตัวเองออก
+                User.id != user_id  
             ).all()
 
             friends = db.query(Friend).filter(

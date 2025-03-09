@@ -17,7 +17,7 @@ class Query:
                 id=user.id, 
                 display_name=user.display_name, 
                 email=user.email, 
-                profile_picture_url=user.profile_picture_url  # ✅ เพิ่มฟิลด์นี้
+                profile_picture_url=user.profile_picture_url  
             ) 
             for user in users
         ]
@@ -30,7 +30,7 @@ class Query:
                 id=user.id, 
                 display_name=user.display_name, 
                 email=user.email, 
-                profile_picture_url=user.profile_picture_url  # ✅ เพิ่มฟิลด์นี้
+                profile_picture_url=user.profile_picture_url 
             )
         return None
     
@@ -75,8 +75,8 @@ class Query:
                 email=user["email"],
                 profile_picture_url=user["profilePictureUrl"],
                 request_sent=user["requestSent"],
-                request_received=user["requestReceived"],  # ✅ ดึงค่า requestReceived
-                is_friend=user["isFriend"],  # ✅ ดึงค่า isFriend
+                request_received=user["requestReceived"],  
+                is_friend=user["isFriend"], 
             ) 
             for user in users
         ]

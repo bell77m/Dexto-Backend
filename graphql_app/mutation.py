@@ -32,11 +32,11 @@ class Mutation:
     def update_user_avatar(self, id: int, profile_picture_url: str) -> Optional[UserType]:
         """อัปเดตรูปโปรไฟล์ของผู้ใช้"""
         
-        # ✅ ตรวจสอบว่าค่า URL มีการส่งเข้ามาจริง
+        # ตรวจสอบว่าค่า URL มีการส่งเข้ามาจริง
         if not profile_picture_url or not isinstance(profile_picture_url, str):
             raise ValueError("Invalid profile picture URL")
         
-        user = UserGateway.update_user_avatar(id, profile_picture_url.strip()) # ✅ Trim ช่องว่างก่อนบันทึก
+        user = UserGateway.update_user_avatar(id, profile_picture_url.strip()) # Trim ช่องว่างก่อนบันทึก
         if user:
             return UserType(
                 id=user.id,

@@ -29,7 +29,7 @@ app = FastAPI()
 # การตั้งค่า CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all domains for now (ปรับได้)
+    allow_origins=["*"],  # Allow all domains for now 
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
