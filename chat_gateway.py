@@ -21,13 +21,16 @@ class ChatGateway:
             return new_message
 
     @staticmethod
-    def get_messages(user_id: int, friend_id: int) -> List[ChatMessage]:
-        """ ดึงแชทระหว่าง user_id และ friend_id """
+    def get_messages(user_id: int, friend_id: int):
+        """ ดึงข้อความแชทระหว่าง user_id และ friend_id """
         with SessionLocal() as db:
             messages = db.query(ChatMessage).filter(
                 ((ChatMessage.sender_id == user_id) & (ChatMessage.receiver_id == friend_id)) |
                 ((ChatMessage.sender_id == friend_id) & (ChatMessage.receiver_id == user_id))
             ).order_by(ChatMessage.sent_at.asc()).all()
+        
+            print(f"🔍 DEBUG: get_messages({user_id}, {friend_id}) ->", messages)  # ✅ ดูว่ามีข้อมูลหรือไม่
+        
             return messages
 
     @staticmethod
