@@ -1,11 +1,12 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 from graphql_app.database import SessionLocal
-from graphql_app.model import ChatMessage, User
+from graphql_app.model import ChatMessage, User, Friend
+from typing import List, Optional
 
 class ChatGateway:
     @staticmethod
-    def send_message(sender_id: int, receiver_id: int, message: str = None, image_url: str = None):
+    def send_message(sender_id: int, receiver_id: int, message: Optional[str] = None, image_url: Optional[str] = None):
         """ ส่งข้อความหรือรูปภาพ """
         with SessionLocal() as db:
             new_message = ChatMessage(
@@ -17,9 +18,10 @@ class ChatGateway:
             )
             db.add(new_message)
             db.commit()
+            return new_message
 
     @staticmethod
-    def get_messages(user_id: int, friend_id: int):
+    def get_messages(user_id: int, friend_id: int) -> List[ChatMessage]:
         """ ดึงแชทระหว่าง user_id และ friend_id """
         with SessionLocal() as db:
             messages = db.query(ChatMessage).filter(
@@ -33,16 +35,19 @@ class ChatGateway:
         """ เปลี่ยนสถานะ is_read เป็น True """
         with SessionLocal() as db:
             db.query(ChatMessage).filter(
-                (ChatMessage.sender_id == friend_id) & (ChatMessage.receiver_id == user_id) & (ChatMessage.is_read == False)
+                (ChatMessage.sender_id == friend_id) &
+                (ChatMessage.receiver_id == user_id) &
+                (ChatMessage.is_read == False)
             ).update({"is_read": True})
             db.commit()
 
     @staticmethod
-    def get_friends_with_last_message(user_id: int):
-        """ ดึงเพื่อนทั้งหมดและข้อความล่าสุดของแต่ละคน """
+    def get_friends_with_last_message(user_id: int) -> List[dict]:
+        """ ดึงรายชื่อเพื่อนทั้งหมดของ user และข้อความล่าสุด """
         with SessionLocal() as db:
-            friends = db.query(User).join(ChatMessage, ((ChatMessage.sender_id == user_id) & (ChatMessage.receiver_id == User.id)) |
-                                          ((ChatMessage.receiver_id == user_id) & (ChatMessage.sender_id == User.id))).distinct().all()
+            # ดึงเพื่อนทั้งหมด
+            friends = db.query(User).join(Friend, ((Friend.user_id == user_id) & (Friend.friend_id == User.id)) |
+                                          ((Friend.friend_id == user_id) & (Friend.user_id == User.id))).distinct().all()
 
             friend_list = []
             for friend in friends:

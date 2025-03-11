@@ -4,12 +4,12 @@ from user_gateway import UserGateway
 from friend_gateway import FriendGateway
 from chat_gateway import ChatGateway
 from .Types import UserType, LoginResponse, FriendType, FriendRequestResponse
+from .Types import ChatMessageType, FriendChatSummary
 
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     def add_user(self, display_name: str, email: str, password: str, profile_picture_url: Optional[str] = None) -> Optional[UserType]:
-        # ถ้าไม่ได้ส่ง profile_picture_url, ใช้ค่า default
         user = UserGateway.add_user(display_name, email, password, profile_picture_url)
         if user:
             return UserType(
@@ -120,7 +120,7 @@ class Mutation:
         return FriendRequestResponse(success=False, message="Friend request not found or already canceled")
     
     @strawberry.mutation
-    def send_message(self, user_id: int, friend_id: int, message: str = None, image_url: str = None) -> bool:
+    def send_message(self, user_id: int, friend_id: int, message: Optional[str] = None, image_url: Optional[str] = None) -> bool:
         """ ส่งข้อความหรือรูปภาพ """
         ChatGateway.send_message(user_id, friend_id, message, image_url)
         return True
@@ -130,4 +130,4 @@ class Mutation:
         """ อัปเดต is_read เป็น True """
         ChatGateway.mark_messages_as_read(user_id, friend_id)
         return True
-    
+
