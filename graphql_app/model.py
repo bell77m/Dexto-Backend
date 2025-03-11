@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Enum, UniqueConstraint, CheckConstraint
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Enum, UniqueConstraint, CheckConstraint, Text
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
 
@@ -66,3 +66,17 @@ class Notification(Base):
 
     def __repr__(self):
         return f"<Notification(user_id={self.user_id}, sender_id={self.sender_id}, type={self.type})>"
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    receiver_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    message = Column(Text, nullable=True)
+    image_url = Column(String(500), nullable=True)
+    is_read = Column(Boolean, default=False, nullable=False)
+    sent_at = Column(DateTime, default=func.now(), nullable=False)
+
+    sender = relationship("User", foreign_keys=[sender_id])
+    receiver = relationship("User", foreign_keys=[receiver_id])

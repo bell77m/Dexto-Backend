@@ -46,3 +46,22 @@ class NotificationType:
     type: str
     sent_at: str
     is_read: bool
+    
+@strawberry.type
+class ChatMessageType:
+    id: int
+    sender_id: int
+    message: Optional[str]
+    image_url: Optional[str]
+    is_read: bool
+    sent_at: str
+    
+@strawberry.type
+class FriendChatSummary:
+    id: int
+    displayName: str
+    profilePictureUrl: str
+    lastMessage: Optional[str]
+    lastImage: Optional[str]
+    lastMessageTime: Optional[float]
+    lastIsRead: Optional[bool]
