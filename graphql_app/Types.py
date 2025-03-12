@@ -66,16 +66,30 @@ class FriendChatSummary:
     lastMessageTime: Optional[float]
     lastIsRead: Optional[bool]
     
-@strawberry.type
+@strawberry.type    
 class ForumPostType:
     """ GraphQL Type สำหรับ Forum Post """
     id: int
-    user_id: int  # ✅ เพิ่ม `user_id` ให้รองรับใน `searchPosts`
+    user_id: int
+    user_name: str  # ✅ เพิ่มชื่อของเจ้าของโพสต์
+    user_profile: str  # ✅ เพิ่มรูปโปรไฟล์ของเจ้าของโพสต์
     title: str
     content: str
-    image_url: Optional[str] = None  # ✅ ป้องกัน `None` error
+    image_url: Optional[str] = None
     tags: Optional[str] = None
     likes: int
+    created_at: str
+
+@strawberry.type
+class ForumCommentType:
+    """ GraphQL Type สำหรับ Forum Comment """
+    id: int
+    post_id: int
+    user_id: int
+    user_name: str  # ✅ เพิ่มชื่อของเจ้าของคอมเมนต์
+    user_profile: str  # ✅ เพิ่มรูปโปรไฟล์ของเจ้าของคอมเมนต์
+    parent_comment_id: Optional[int] = None
+    content: str
     created_at: str
 
 @strawberry.type
@@ -84,17 +98,6 @@ class ForumLikeType:
     id: int
     user_id: int
     post_id: int
-
-@strawberry.type
-class ForumCommentType:
-    """ GraphQL Type สำหรับ Forum Comment """
-    id: int
-    post_id: int
-    user_id: int
-    parent_comment_id: Optional[int] = None  # ✅ รองรับค่า `None`
-    content: str
-    created_at: str
-    user_profile: Optional[str] = None
 
 @strawberry.type
 class ForumPostDetailType:

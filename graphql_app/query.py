@@ -169,6 +169,8 @@ class Query:
             post=ForumPostType(
                 id=post.id,
                 user_id=post.user_id,
+                user_name=post.user.display_name,  # ✅ ดึงชื่อของเจ้าของโพสต์
+                user_profile=post.user.profile_picture_url,
                 title=post.title,
                 content=post.content,
                 image_url=post.image_url,
@@ -181,10 +183,11 @@ class Query:
                     id=c.id, 
                     user_id=c.user_id, 
                     post_id=c.post_id, 
+                    user_name=c.user.display_name,  # ✅ ดึงชื่อของเจ้าของคอมเมนต์
+                    user_profile=c.user.profile_picture_url,
                     parent_comment_id=c.parent_comment_id,
                     content=c.content, 
-                    created_at=str(c.created_at),
-                    user_profile=c.user.profile_picture_url
+                    created_at=str(c.created_at)
                 ) 
                 for c in comments
             ]

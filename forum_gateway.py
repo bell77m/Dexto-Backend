@@ -25,11 +25,9 @@ class ForumGateway:
 
     @staticmethod
     def get_comments(post_id: int):
-        """ ดึงคอมเมนต์ของโพสต์ พร้อมแสดงโปรไฟล์ผู้ใช้ """
+        """ ดึงคอมเมนต์ของโพสต์ พร้อมข้อมูลผู้ใช้ """
         with SessionLocal() as db:
-            comments = db.query(ForumComment).options(
-                joinedload(ForumComment.user)  # ✅ โหลดข้อมูลผู้ใช้
-            ).filter(ForumComment.post_id == post_id).all()
+            comments = db.query(ForumComment).options(joinedload(ForumComment.user)).filter(ForumComment.post_id == post_id).all()
             return comments
 
     @staticmethod
@@ -83,7 +81,7 @@ class ForumGateway:
         
     @staticmethod
     def get_post_by_id(post_id: int):
-        """ ดึงโพสต์ตาม ID """
+        """ ดึงโพสต์ตาม ID พร้อมข้อมูลผู้ใช้ """
         with SessionLocal() as db:
-            post = db.query(ForumPost).filter(ForumPost.id == post_id).first()
-            return post if post else None
+            post = db.query(ForumPost).options(joinedload(ForumPost.user)).filter(ForumPost.id == post_id).first()
+            return post
