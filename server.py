@@ -1,12 +1,14 @@
-import uvicorn, socket, json, asyncio, platform, os, git
+import uvicorn, socket, json, asyncio, platform, os, uuid, git # type: ignore
 from pydantic import BaseModel
+from typing import Dict, List
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
+
 """
-Voice chat websocket
+fastapi and ip fetch
 """
 
 # Use SelectorEventLoop on Windows to avoid Proactor issues
@@ -21,12 +23,38 @@ app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], # In production, specify your frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
+# Get server's local IP address
+def get_server_ip():
+    try:
+        hostname = socket.gethostname()
+        server_ip = socket.gethostbyname(hostname)
+        return str(server_ip)
+    except:
+        return "127.0.0.1"  # Fallback to localhost
+    
+
+# For fetching IP via front end
+@app.get("/server-ip")
+async def get_server_ip_endpoint():
+    return {"ip": get_server_ip()}
+
+
+# Open html
+def read_html(html):
+    with open(f"templates/{html}", "r", encoding="utf-8") as file:
+        return file.read()
+
+
+"""
+websocket connection manager
+"""
 
 # ConnectionManager to handle WebSocket connections
 class ConnectionManager:
@@ -47,33 +75,21 @@ class ConnectionManager:
         for connection in self.active_connections:
             await connection.send_text(message)
 
-
 manager = ConnectionManager()
 
 
-# Get server's local IP address
-def get_server_ip():
-    try:
-        hostname = socket.gethostname()
-        server_ip = socket.gethostbyname(hostname)
-        return str(server_ip)
-    except:
-        return "127.0.0.1"  # Fallback to localhost
-
-
-def read_html(html):
-    with open(f"templates/{html}", "r", encoding="utf-8") as file:
-        return file.read()
-
+"""
+Text chat websocket
+"""
 
 @app.get("/")
-async def get():
+async def get_text_chat():
     return HTMLResponse(content=read_html("text_chat.html"))
 
 
 # Text chat endpoint
 @app.websocket("/ws/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, user_id: int):
+async def TC_websocket_endpoint(websocket: WebSocket, user_id: int):
     await manager.connect(websocket)
     try:
         while True:
@@ -85,22 +101,20 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int):
         await manager.broadcast(f"Client #{user_id} has left the chat")
 
 
-# For fetching IP
-@app.get("/server-ip")
-async def get_server_ip_endpoint():
-    return {"ip": get_server_ip()}
-
+"""
+VC websocket
+"""
 
 # Redirect root route to index.html
 @app.get("/vc")
-async def root():
+async def get_vc():
     return HTMLResponse(content=read_html("voice_chat.html"))
 
 
 # Store active WebSocket connections
 active_connections = {}
 @app.websocket("/ws/vc/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: str):
+async def VC_websocket_endpoint(websocket: WebSocket, client_id: str):
     try:
         await websocket.accept()
         active_connections[client_id] = websocket
@@ -150,6 +164,11 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             except Exception as e:
                 print(f"Error notifying client {cid} about disconnection: {e}")
 
+
+"""
+Session websocket
+"""                
+pass
 
 """
 Git api
@@ -215,6 +234,5 @@ def push_changes(data: PushData):
 
 
 if __name__ == "__main__":
-    config = uvicorn.Config("__main__:app", host=get_server_ip(), port=8000, ssl_keyfile="key.pem", ssl_certfile="cert.pem")
-    uvicorn.run(config)
+    uvicorn.run("__main__:app", host=get_server_ip(), port=8000, ssl_keyfile="key.pem", ssl_certfile="cert.pem", reload=True)
 

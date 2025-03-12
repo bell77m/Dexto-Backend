@@ -18,9 +18,7 @@ async function startCall() {
 
         // Create WebSocket connection first
         const clientId = Math.random().toString(36).substr(2, 5);
-        let response = await fetch("/server-ip");
-        let data = await response.json();
-        let serverIP = data.ip;
+        let serverIP = (await (await fetch("/server-ip")).json())?.ip;
         ws = new WebSocket(`wss://${serverIP}:8000/ws/vc/${clientId}`);
 
         ws.onopen = async () => {

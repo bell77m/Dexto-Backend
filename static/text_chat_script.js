@@ -3,9 +3,7 @@ document.querySelector("#ws-id").textContent = client_id;
 
 async function startWebSocket() {
     try {
-        let response = await fetch("/server-ip");
-        let data = await response.json();
-        let serverIP = data.ip;
+        let serverIP = (await (await fetch("/server-ip")).json())?.ip;
         let ws = new WebSocket(`wss://${serverIP}:8000/ws/${client_id}`);
         console.log("connected to WebSocket at:", serverIP);
 
@@ -28,4 +26,4 @@ async function startWebSocket() {
     }
 }
 
-void startWebSocket();
+window.onload = startWebSocket();

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Code Editor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 400px;
+            font-family: monospace;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .session-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .control-panel {
+            margin-bottom: 20px;
+        }
+        #error-message {
+            color: red;
+            background-color: #ffeeee;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        #notification {
+            color: #333;
+            background-color: #e6f7ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        button {
+            padding: 8px 16px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Collaborative Code Editor</h1>
+    
+    <div id="error-message"></div>
+    <div id="notification"></div>
+    
+    <!-- Session controls (visible when not in a session) -->
+    <div id="session-controls">
+        <h2>Session Controls</h2>
+        <div class="control-panel">
+            <button id="create-session-btn">Create New Session</button>
+            <hr>
+            <div>
+                <label for="session-id-input">Session ID:</label>
+                <input type="text" id="session-id-input" placeholder="Enter session ID">
+                <button id="join-session-btn">Join Session</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Editor container (visible when in a session) -->
+    <div id="editor-container" style="display: none;">
+        <div class="session-info">
+            <div>
+                <strong>Session ID:</strong> <span id="session-display"></span>
+            </div>
+            <div>
+                <button id="delete-session-btn">Delete Session</button>
+                <button id="disconnect-btn">Disconnect</button>
+            </div>
+        </div>
+        <textarea id="editor" placeholder="Start typing your code here..."></textarea>
+    </div>
+    
+    <script src="/static/session.js"></script>
+</body>
+</html>

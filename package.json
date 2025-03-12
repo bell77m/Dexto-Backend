@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "y-monaco": "^0.1.6",
+    "y-webrtc": "^10.3.0",
+    "yjs": "^13.6.24"
+  }
+}
