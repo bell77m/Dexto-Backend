@@ -125,21 +125,34 @@ class Query:
     
     @strawberry.field
     def search_posts(self, query: str) -> List[ForumPostType]:
+        """ ค้นหาโพสต์พร้อมคอมเมนต์ทั้งหมด """
         posts = ForumGateway.search_posts(query)
         return [
             ForumPostType(
-                id=post.id,
-                user_id=post.user_id,
-                user_name=post.user.display_name,  
-                user_profile=post.user.profile_picture_url, 
-                title=post.title,
-                content=post.content,
-                image_url=post.image_url if post.image_url else None,
-                tags=post.tags,
-                likes=post.likes,
-                created_at=str(post.created_at)  # ✅ ป้องกัน `NoneType` error
-           ) 
-           for post in posts
+                id=post["id"],
+                user_id=post["userId"],
+                user_name=post["userName"],
+                user_profile=post["userProfile"],
+                title=post["title"],
+                content=post["content"],
+                image_url=post["imageUrl"],
+                tags=post["tags"],
+                likes=post["likes"],
+                created_at=str(post["createdAt"]),
+                comments=[
+                    ForumCommentType(
+                        id=comment["id"],
+                        post_id=post["id"],
+                        user_id=comment["userId"],
+                        user_name=comment["userName"],
+                        user_profile=comment["userProfile"],
+                        content=comment["content"],
+                        created_at=str(comment["createdAt"]),
+                    )
+                    for comment in post["comments"]
+                ],
+            )
+            for post in posts
         ]
     
     @strawberry.field

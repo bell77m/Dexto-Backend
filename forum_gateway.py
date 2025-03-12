@@ -46,12 +46,44 @@ class ForumGateway:
 
     @staticmethod
     def search_posts(query: str):
-        """ ค้นหาโพสต์จากชื่อหรือแท็ก """
+        """ ค้นหาโพสต์จากชื่อหรือแท็ก และดึงคอมเมนต์ทั้งหมด """
         with SessionLocal() as db:
             posts = db.query(ForumPost).options(joinedload(ForumPost.user)).filter(
                 (ForumPost.title.ilike(f"%{query}%")) | (ForumPost.tags.ilike(f"%{query}%"))
             ).all()
-            return posts
+            
+            # โหลดคอมเมนต์ทั้งหมดของแต่ละโพสต์
+            post_list = []
+            for post in posts:
+                comments = db.query(ForumComment).options(joinedload(ForumComment.user)).filter(
+                    ForumComment.post_id == post.id
+                ).all()
+
+                post_list.append({
+                    "id": post.id,
+                    "userId": post.user_id,
+                    "userName": post.user.display_name,
+                    "userProfile": post.user.profile_picture_url,
+                    "title": post.title,
+                    "content": post.content,
+                    "imageUrl": post.image_url,
+                    "tags": post.tags,
+                    "likes": post.likes,
+                    "createdAt": post.created_at,
+                    "comments": [
+                        {
+                            "id": comment.id,
+                            "userId": comment.user_id,
+                            "userName": comment.user.display_name,
+                            "userProfile": comment.user.profile_picture_url,
+                            "content": comment.content,
+                            "createdAt": comment.created_at,
+                        }
+                        for comment in comments
+                    ],
+                })
+
+            return post_list
 
     @staticmethod
     def like_post(user_id: int, post_id: int):
