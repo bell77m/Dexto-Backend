@@ -147,7 +147,8 @@ class Mutation:
                 tags=post.tags,
                 likes=post.likes,
                 image_url=post.image_url,
-                created_at=str(post.created_at)  # ✅ แปลงเป็น `str`
+                created_at=str(post.created_at),
+                comments=[] # ✅ แปลงเป็น `str`
             )
         return None
 

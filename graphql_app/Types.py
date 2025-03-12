@@ -65,7 +65,7 @@ class FriendChatSummary:
     lastImage: Optional[str]
     lastMessageTime: Optional[float]
     lastIsRead: Optional[bool]
-    
+
 @strawberry.type
 class ForumCommentType:
     """ GraphQL Type สำหรับ Forum Comment """
@@ -76,8 +76,8 @@ class ForumCommentType:
     user_profile: str  # ✅ เพิ่มรูปโปรไฟล์ของเจ้าของคอมเมนต์
     parent_comment_id: Optional[int] = None
     content: str
-    created_at: str
-
+    created_at: str 
+    
 @strawberry.type    
 class ForumPostType:
     """ GraphQL Type สำหรับ Forum Post """
