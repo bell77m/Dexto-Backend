@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const participantCountEl = document.getElementById('participant-count');
     
     // State
-    let socket = null;
+    let ws = null;
     let currentSessionId = null;
     let isConnected = false;
     let lastCursorPosition = 0;
@@ -69,24 +69,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to connect to WebSocket
     async function connectWebSocket(sessionId) {
         // Close existing socket if any
-        if (socket) {
-            socket.close();
+        if (ws) {
+            ws.close();
         }
         
         // Determine WebSocket protocol based on page protocol
         let serverIP = (await (await fetch("/server-ip")).json())?.ip;
-        const wsUrl = `wss://${serverIP}/ws/session/${sessionId}`;
+        ws = new WebSocket(`wss://${serverIP}/ws/session/${sessionId}`);
         
-        socket = new WebSocket(wsUrl);
-        
-        socket.onopen = () => {
+        ws.onopen = () => {
             currentSessionId = sessionId;
             currentSessionIdEl.textContent = sessionId;
             updateConnectionStatus(true);
             showNotification('Connected to session');
         };
         
-        socket.onclose = () => {
+        ws.onclose = () => {
             if (isConnected) {
                 showNotification('Disconnected from session', '#dc3545');
             }
@@ -94,12 +92,12 @@ document.addEventListener('DOMContentLoaded', () => {
             currentSessionId = null;
         };
         
-        socket.onerror = (error) => {
+        ws.onerror = (error) => {
             console.error('WebSocket error:', error);
             showNotification('Connection error', '#dc3545');
         };
         
-        socket.onmessage = (event) => {
+        ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             
             if (data.type === 'code_update') {
@@ -150,8 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Leave the current session
     leaveSessionBtn.addEventListener('click', () => {
-        if (socket) {
-            socket.close();
+        if (ws) {
+            ws.close();
         }
     });
     
@@ -169,12 +167,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Debounce to reduce network traffic
         clearTimeout(debounceTimeout);
         debounceTimeout = setTimeout(() => {
-            if (socket && socket.readyState === WebSocket.OPEN) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
                 const data = {
                     type: 'code_update',
                     content: codeEditor.value
                 };
-                socket.send(JSON.stringify(data));
+                ws.send(JSON.stringify(data));
             }
         }, 100);
     });

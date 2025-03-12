@@ -10,12 +10,10 @@ function App(){
 
     function handleEditorDidMount(editor, monaco){
         editorRef.current = editor;
-
         const doc = new Y.Doc();
         const provider = new WebrtcProvider("test-room", doc);
         const type = doc.getText("monaco");
         const biding = new MonacoBinding(type, editorRef.current.getModel(), new Set([editorRef.current]), provider.awareness);
-        
     }
 
     return (

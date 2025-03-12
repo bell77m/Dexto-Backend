@@ -167,7 +167,7 @@ async def VC_websocket_endpoint(websocket: WebSocket, client_id: str):
 
 """
 Session websocket
-"""      
+"""
 
 # Store active sessions: session_id -> list of connected WebSocket clients
 sessions: Dict[str, List[WebSocket]] = {}
@@ -220,6 +220,7 @@ async def session_websocket_endpoint(websocket: WebSocket, session_id: str):
 """
 Git api
 """
+
 
 REPO_PATH = "repo"
 
