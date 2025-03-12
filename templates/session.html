@@ -7,82 +7,149 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f5f5f5;
         }
-        textarea {
-            width: 100%;
-            height: 400px;
-            font-family: monospace;
-            padding: 10px;
-            margin-top: 10px;
-        }
-        .session-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .control-panel {
+        header {
+            text-align: center;
             margin-bottom: 20px;
         }
-        #error-message {
-            color: red;
-            background-color: #ffeeee;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            display: none;
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
-        #notification {
-            color: #333;
-            background-color: #e6f7ff;
+        .session-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .status-indicator {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+            background-color: white;
+        }
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
             padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            display: none;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ccc;
+        }
+        #code-editor {
+            width: 100%;
+            height: 400px;
+            padding: 10px;
+            font-family: monospace;
+            resize: vertical;
+            border: none;
+            outline: none;
+            overflow-y: auto;
+            tab-size: 4;
         }
         button {
             padding: 8px 16px;
-            margin-right: 8px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .session-id-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+        #copy-session-id {
+            padding: 4px 8px;
+            font-size: 0.8em;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            background-color: #28a745;
+            color: white;
+            transition: opacity 0.5s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .participant-count {
+            margin-left: auto;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
-    <h1>Collaborative Code Editor</h1>
+    <header>
+        <h1>Collaborative Code Editor</h1>
+    </header>
     
-    <div id="error-message"></div>
-    <div id="notification"></div>
-    
-    <!-- Session controls (visible when not in a session) -->
-    <div id="session-controls">
-        <h2>Session Controls</h2>
-        <div class="control-panel">
+    <div class="container">
+        <div class="session-controls">
             <button id="create-session-btn">Create New Session</button>
-            <hr>
-            <div>
-                <label for="session-id-input">Session ID:</label>
-                <input type="text" id="session-id-input" placeholder="Enter session ID">
-                <button id="join-session-btn">Join Session</button>
+            <input type="text" id="session-id-input" placeholder="Enter Session ID">
+            <button id="join-session-btn">Join Session</button>
+            <button id="leave-session-btn" disabled>Leave Session</button>
+            <div id="status" class="status-indicator disconnected">Disconnected</div>
+        </div>
+        
+        <div id="session-info" style="display: none;">
+            <div class="session-id-display">
+                <span>Session ID:</span>
+                <strong id="current-session-id"></strong>
+                <button id="copy-session-id">Copy</button>
+                <span id="participant-count" class="participant-count">Participants: 1</span>
             </div>
+        </div>
+        
+        <div class="editor-container">
+            <div class="editor-header">
+                <span>Code Editor</span>
+            </div>
+            <textarea id="code-editor" placeholder="Start coding here..." disabled></textarea>
         </div>
     </div>
     
-    <!-- Editor container (visible when in a session) -->
-    <div id="editor-container" style="display: none;">
-        <div class="session-info">
-            <div>
-                <strong>Session ID:</strong> <span id="session-display"></span>
-            </div>
-            <div>
-                <button id="delete-session-btn">Delete Session</button>
-                <button id="disconnect-btn">Disconnect</button>
-            </div>
-        </div>
-        <textarea id="editor" placeholder="Start typing your code here..."></textarea>
-    </div>
+    <div id="notification" class="notification"></div>
     
-    <script src="/static/session.js"></script>
+    <script src="/static/session_script.js"></script>
 </body>
 </html>
