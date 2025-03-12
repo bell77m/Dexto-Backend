@@ -132,6 +132,21 @@ class Query:
     def get_comments(self, post_id: int) -> List[ForumCommentType]:
         comments = ForumGateway.get_comments(post_id)
         return [ForumCommentType(id=c.id, user_id=c.user_id, post_id=c.post_id, content=c.content) for c in comments]
-
+ 
+    @strawberry.field
+    def get_post_with_comments(self, post_id: int) -> ForumPostDetailType:
+        """ ดึงโพสต์และคอมเมนต์ของโพสต์ """
+        post = ForumGateway.get_post_by_id(post_id)
+        comments = ForumGateway.get_comments(post_id)
+        return ForumPostDetailType(
+            post=ForumPostType(
+                id=post.id,
+                title=post.title,
+                content=post.content,
+                tags=post.tags,
+                likes=post.likes
+            ),
+            comments=[ForumCommentType(id=c.id, user_id=c.user_id, post_id=c.post_id, content=c.content) for c in comments]
+        )
 
 

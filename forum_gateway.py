@@ -14,6 +14,15 @@ class ForumGateway:
             return new_post
 
     @staticmethod
+    def get_comments(post_id: int):
+        """ ดึงคอมเมนต์ของโพสต์ พร้อมแสดงโปรไฟล์ผู้ใช้ """
+        with SessionLocal() as db:
+            comments = db.query(ForumComment).options(
+                joinedload(ForumComment.user)  # ✅ โหลดข้อมูลผู้ใช้
+            ).filter(ForumComment.post_id == post_id).all()
+            return comments
+
+    @staticmethod
     def delete_post(user_id: int, post_id: int):
         """ ลบโพสต์ (เฉพาะเจ้าของโพสต์เท่านั้น) """
         with SessionLocal() as db:

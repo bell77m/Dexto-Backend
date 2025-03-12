@@ -96,6 +96,7 @@ class ForumPost(Base):
     created_at = Column(DateTime, default=func.now(), nullable=False)
 
     user = relationship("User")
+    comments = relationship("ForumComment", back_populates="post", cascade="all, delete-orphan")  # ✅ เพิ่มความสัมพันธ์
 
 class ForumLike(Base):
     """ ตารางบันทึกไลค์ของโพสต์ """
@@ -117,5 +118,5 @@ class ForumComment(Base):
     created_at = Column(DateTime, default=func.now(), nullable=False)
 
     user = relationship("User")
-    post = relationship("ForumPost", back_populates="comments")
+    post = relationship("ForumPost", back_populates="comments")  # ✅ เพิ่ม relationship กลับไปยัง ForumPost
     parent_comment = relationship("ForumComment", remote_side=[id])
