@@ -4,8 +4,10 @@ from user_gateway import UserGateway
 from friend_gateway import FriendGateway
 from chat_gateway import ChatGateway
 from notification_gateway import NotificationGateway
+from forum_gateway import ForumGateway
 from .Types import  UserType, NotificationType, FriendRequestType
 from .Types import ChatMessageType, FriendChatSummary
+from .Types import ForumPostType, ForumCommentType
 from graphql_app.database import SessionLocal
 from graphql_app.model import User, Friend
 
@@ -120,6 +122,16 @@ class Query:
     def get_friend_chat(self, user_id: int) -> List[FriendChatSummary]:
         friends = ChatGateway.get_friends_with_last_message(user_id)
         return [FriendChatSummary(**friend) for friend in friends]
+    
+    @strawberry.field
+    def search_posts(self, query: str) -> List[ForumPostType]:
+        posts = ForumGateway.search_posts(query)
+        return [ForumPostType(id=post.id, title=post.title, content=post.content, tags=post.tags, likes=post.likes) for post in posts]
+
+    @strawberry.field
+    def get_comments(self, post_id: int) -> List[ForumCommentType]:
+        comments = ForumGateway.get_comments(post_id)
+        return [ForumCommentType(id=c.id, user_id=c.user_id, post_id=c.post_id, content=c.content) for c in comments]
 
 
 

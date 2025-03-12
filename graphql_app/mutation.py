@@ -3,8 +3,10 @@ from typing import Optional
 from user_gateway import UserGateway
 from friend_gateway import FriendGateway
 from chat_gateway import ChatGateway
+from forum_gateway import ForumGateway
 from .Types import UserType, LoginResponse, FriendType, FriendRequestResponse
 from .Types import ChatMessageType, FriendChatSummary
+from .Types import ForumPostType, ForumCommentType
 
 @strawberry.type
 class Mutation:
@@ -130,4 +132,27 @@ class Mutation:
         """ อัปเดต is_read เป็น True """
         ChatGateway.mark_messages_as_read(user_id, friend_id)
         return True
+    
+    @strawberry.mutation
+    def create_post(self, user_id: int, title: str, content: str, tags: str, image_url: Optional[str] = None) -> Optional[ForumPostType]:
+        post = ForumGateway.create_post(user_id, title, content, tags, image_url=image_url)
+        if post:
+            return ForumPostType(id=post.id, user_id=post.user_id, title=post.title, content=post.content, tags=post.tags, likes=post.likes)
+        return None
+
+    @strawberry.mutation
+    def delete_post(self, user_id: int, post_id: int) -> bool:
+        return ForumGateway.delete_post(user_id, post_id)
+
+    @strawberry.mutation
+    def like_post(self, user_id: int, post_id: int) -> bool:
+        return ForumGateway.like_post(user_id, post_id)
+
+    @strawberry.mutation
+    def add_comment(self, user_id: int, post_id: int, content: str, parent_comment_id: Optional[int] = None) -> Optional[ForumCommentType]:
+        comment = ForumGateway.add_comment(user_id, post_id, content, parent_comment_id)
+        if comment:
+            return ForumCommentType(id=comment.id, user_id=comment.user_id, post_id=comment.post_id, content=comment.content)
+        return None
+    
 

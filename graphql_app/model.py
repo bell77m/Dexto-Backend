@@ -80,3 +80,42 @@ class ChatMessage(Base):
 
     sender = relationship("User", foreign_keys=[sender_id])
     receiver = relationship("User", foreign_keys=[receiver_id])
+    
+class ForumPost(Base):
+    """ ตารางโพสต์ของ Forum """
+    __tablename__ = "forum_posts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False)
+    image_data = Column(Text, nullable=True)  # เก็บ Base64 หรือ URL ของภาพ
+    image_url = Column(String(500), nullable=True)  # ใช้เก็บ URL ของภาพ
+    tags = Column(String(255), nullable=True)  # แท็กคั่นด้วย ","
+    likes = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+
+    user = relationship("User")
+
+class ForumLike(Base):
+    """ ตารางบันทึกไลค์ของโพสต์ """
+    __tablename__ = "forum_likes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    post_id = Column(Integer, ForeignKey("forum_posts.id", ondelete="CASCADE"), nullable=False)
+
+class ForumComment(Base):
+    """ ตารางบันทึกคอมเมนต์และคอมเมนต์ตอบกลับ """
+    __tablename__ = "forum_comments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    post_id = Column(Integer, ForeignKey("forum_posts.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    parent_comment_id = Column(Integer, ForeignKey("forum_comments.id", ondelete="CASCADE"), nullable=True)  # รองรับคอมเมนต์ตอบกลับ
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+
+    user = relationship("User")
+    post = relationship("ForumPost", back_populates="comments")
+    parent_comment = relationship("ForumComment", remote_side=[id])

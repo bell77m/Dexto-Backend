@@ -65,3 +65,38 @@ class FriendChatSummary:
     lastImage: Optional[str]
     lastMessageTime: Optional[float]
     lastIsRead: Optional[bool]
+    
+@strawberry.type
+class ForumPostType:
+    """ GraphQL Type สำหรับ Forum Post """
+    id: int
+    user_id: int
+    title: str
+    content: str
+    image_url: Optional[str]
+    tags: Optional[str]
+    likes: int
+    created_at: str
+
+@strawberry.type
+class ForumLikeType:
+    """ GraphQL Type สำหรับ Forum Like """
+    id: int
+    user_id: int
+    post_id: int
+
+@strawberry.type
+class ForumCommentType:
+    """ GraphQL Type สำหรับ Forum Comment """
+    id: int
+    post_id: int
+    user_id: int
+    parent_comment_id: Optional[int]
+    content: str
+    created_at: str
+
+@strawberry.type
+class ForumPostDetailType:
+    """ GraphQL Type ที่รวม Post และ Comments """
+    post: ForumPostType
+    comments: List[ForumCommentType]
