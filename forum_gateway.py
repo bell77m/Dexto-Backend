@@ -128,3 +128,20 @@ class ForumGateway:
         with SessionLocal() as db:
             post = db.query(ForumPost).options(joinedload(ForumPost.user)).filter(ForumPost.id == post_id).first()
             return post
+        
+    
+    @staticmethod
+    def delete_post(user_id: int, post_id: int) -> bool:
+        """ ลบโพสต์ (เฉพาะเจ้าของโพสต์เท่านั้น) """
+        with SessionLocal() as db:
+            post = db.query(ForumPost).filter(ForumPost.id == post_id, ForumPost.user_id == user_id).first()
+            if post:
+                # ลบไลค์ที่เกี่ยวข้อง
+                db.query(ForumLike).filter(ForumLike.post_id == post_id).delete()
+                # ลบคอมเมนต์ที่เกี่ยวข้อง
+                db.query(ForumComment).filter(ForumComment.post_id == post_id).delete()
+                # ลบโพสต์
+                db.delete(post)
+                db.commit()
+                return True
+        return False

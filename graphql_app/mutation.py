@@ -1,5 +1,6 @@
 import strawberry
 from typing import Optional
+from .database import SessionLocal
 from user_gateway import UserGateway
 from friend_gateway import FriendGateway
 from chat_gateway import ChatGateway
@@ -151,9 +152,10 @@ class Mutation:
                 comments=[] # ✅ แปลงเป็น `str`
             )
         return None
-
+    
     @strawberry.mutation
     def delete_post(self, user_id: int, post_id: int) -> bool:
+        """ ลบโพสต์เฉพาะเจ้าของโพสต์เท่านั้น """
         return ForumGateway.delete_post(user_id, post_id)
 
     @strawberry.mutation
