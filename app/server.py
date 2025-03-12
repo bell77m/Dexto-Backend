@@ -1,6 +1,6 @@
 from config.config import Config
 from graphql_app.schema import schema
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from strawberry.fastapi import GraphQLRouter
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -17,6 +17,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.post("/excute")
+async def excute():
+    pass
+
 # GraphQL endpoint
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
@@ -24,8 +28,4 @@ app.include_router(graphql_app, prefix="/graphql")
 # load server config
 server_conf = Config("../config/config.ini")
 
-
-
-if __name__ == "__main__":
-    uvicorn.run("__main__:app", host=server_conf.load_server_config()["host"], port=int(server_conf.load_server_config()["port"]), reload=True, workers=1)
 
