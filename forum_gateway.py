@@ -1,13 +1,23 @@
 from graphql_app.database import SessionLocal
 from graphql_app.model import ForumPost, ForumComment, ForumLike
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func  
+
 
 class ForumGateway:
     @staticmethod
-    def create_post(user_id: int, title: str, content: str, tags: str, image_data=None, image_url=None):
+    def create_post(user_id: int, title: str, content: str, tags: str, image_data: str = None, image_url: str = None):
         """ เพิ่มโพสต์ใหม่ """
         with SessionLocal() as db:
-            new_post = ForumPost(user_id=user_id, title=title, content=content, tags=tags, image_data=image_data, image_url=image_url)
+            new_post = ForumPost(
+                user_id=user_id,
+                title=title,
+                content=content,
+                tags=tags,
+                image_data=image_data if image_data else None,  # ✅ เก็บรูปเป็น Base64
+                image_url=image_url if image_url else None,  # ✅ หรือเก็บเป็น URL
+                created_at=func.now()  # ✅ ป้องกัน `None` ใน `created_at`
+            )
             db.add(new_post)
             db.commit()
             db.refresh(new_post)
@@ -44,19 +54,22 @@ class ForumGateway:
 
     @staticmethod
     def like_post(user_id: int, post_id: int):
-        """ ไลค์โพสต์ (1 คนไลค์ได้แค่ 1 ครั้ง และเจ้าของโพสไลค์โพสตัวเองไม่ได้) """
+        """ กดไลค์โพสต์ (1 คนไลค์ได้แค่ 1 ครั้ง และเจ้าของโพสต์ไลค์โพสตัวเองไม่ได้) """
         with SessionLocal() as db:
             post = db.query(ForumPost).filter(ForumPost.id == post_id).first()
             if not post or post.user_id == user_id:
-                return False
+                return False  # ✅ ห้ามเจ้าของโพสต์ไลค์โพสต์ตัวเอง
 
-            existing_like = db.query(ForumLike).filter(ForumLike.user_id == user_id, ForumLike.post_id == post_id).first()
-            if not existing_like:
-                db.add(ForumLike(user_id=user_id, post_id=post_id))
-                post.likes += 1
-                db.commit()
-                return True
-        return False
+            existing_like = db.query(ForumLike).filter(
+                ForumLike.user_id == user_id, ForumLike.post_id == post_id
+            ).first()
+            if existing_like:
+                return False  # ✅ ป้องกันการไลค์ซ้ำ
+
+            db.add(ForumLike(user_id=user_id, post_id=post_id))
+            post.likes += 1  # ✅ อัปเดตจำนวนไลค์ใน `forum_posts`
+            db.commit()
+            return True
 
     @staticmethod
     def add_comment(user_id: int, post_id: int, content: str, parent_comment_id=None):
@@ -67,3 +80,10 @@ class ForumGateway:
             db.commit()
             db.refresh(new_comment)
             return new_comment
+        
+    @staticmethod
+    def get_post_by_id(post_id: int):
+        """ ดึงโพสต์ตาม ID """
+        with SessionLocal() as db:
+            post = db.query(ForumPost).filter(ForumPost.id == post_id).first()
+            return post if post else None

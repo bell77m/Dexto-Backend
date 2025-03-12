@@ -70,11 +70,11 @@ class FriendChatSummary:
 class ForumPostType:
     """ GraphQL Type สำหรับ Forum Post """
     id: int
-    user_id: int
+    user_id: int  # ✅ เพิ่ม `user_id` ให้รองรับใน `searchPosts`
     title: str
     content: str
-    image_url: Optional[str]
-    tags: Optional[str]
+    image_url: Optional[str] = None  # ✅ ป้องกัน `None` error
+    tags: Optional[str] = None
     likes: int
     created_at: str
 
@@ -91,9 +91,10 @@ class ForumCommentType:
     id: int
     post_id: int
     user_id: int
-    parent_comment_id: Optional[int]
+    parent_comment_id: Optional[int] = None  # ✅ รองรับค่า `None`
     content: str
     created_at: str
+    user_profile: Optional[str] = None
 
 @strawberry.type
 class ForumPostDetailType:

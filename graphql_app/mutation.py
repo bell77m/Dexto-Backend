@@ -134,10 +134,19 @@ class Mutation:
         return True
     
     @strawberry.mutation
-    def create_post(self, user_id: int, title: str, content: str, tags: str, image_url: Optional[str] = None) -> Optional[ForumPostType]:
-        post = ForumGateway.create_post(user_id, title, content, tags, image_url=image_url)
+    def create_post(self, user_id: int, title: str, content: str, tags: str, image_data: Optional[str] = None, image_url: Optional[str] = None) -> Optional[ForumPostType]:
+        post = ForumGateway.create_post(user_id, title, content, tags, image_data, image_url)
         if post:
-            return ForumPostType(id=post.id, user_id=post.user_id, title=post.title, content=post.content, tags=post.tags, likes=post.likes)
+            return ForumPostType(
+                id=post.id,
+                user_id=post.user_id,
+                title=post.title,
+                content=post.content,
+                tags=post.tags,
+                likes=post.likes,
+                image_url=post.image_url,
+                created_at=str(post.created_at)  # ✅ แปลงเป็น `str`
+            )
         return None
 
     @strawberry.mutation
@@ -150,9 +159,17 @@ class Mutation:
 
     @strawberry.mutation
     def add_comment(self, user_id: int, post_id: int, content: str, parent_comment_id: Optional[int] = None) -> Optional[ForumCommentType]:
+        """ เพิ่มคอมเมนต์หรือคอมเมนต์ตอบกลับ """
         comment = ForumGateway.add_comment(user_id, post_id, content, parent_comment_id)
         if comment:
-            return ForumCommentType(id=comment.id, user_id=comment.user_id, post_id=comment.post_id, content=comment.content)
+            return ForumCommentType(
+                id=comment.id,
+                user_id=comment.user_id,
+                post_id=comment.post_id,
+                parent_comment_id=comment.parent_comment_id,  # ✅ ส่งค่า `parent_comment_id`
+                content=comment.content,
+                created_at=str(comment.created_at)  # ✅ ส่งค่า `created_at`
+            )
         return None
     
 

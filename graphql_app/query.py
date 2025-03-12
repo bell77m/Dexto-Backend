@@ -7,7 +7,7 @@ from notification_gateway import NotificationGateway
 from forum_gateway import ForumGateway
 from .Types import  UserType, NotificationType, FriendRequestType
 from .Types import ChatMessageType, FriendChatSummary
-from .Types import ForumPostType, ForumCommentType
+from .Types import ForumPostType, ForumCommentType, ForumPostDetailType
 from graphql_app.database import SessionLocal
 from graphql_app.model import User, Friend
 
@@ -125,28 +125,70 @@ class Query:
     
     @strawberry.field
     def search_posts(self, query: str) -> List[ForumPostType]:
+        """ ค้นหาโพสต์จากหัวข้อหรือแท็ก """
         posts = ForumGateway.search_posts(query)
-        return [ForumPostType(id=post.id, title=post.title, content=post.content, tags=post.tags, likes=post.likes) for post in posts]
-
+        return [
+            ForumPostType(
+                id=post.id,
+               user_id=post.user_id,  # ✅ เพิ่ม `user_id`
+              title=post.title,
+              content=post.content,
+              image_url=post.image_url if post.image_url else None,
+              tags=post.tags,
+              likes=post.likes,
+              created_at=str(post.created_at)  # ✅ ป้องกัน `NoneType` error
+           ) 
+           for post in posts
+        ]
+    
     @strawberry.field
     def get_comments(self, post_id: int) -> List[ForumCommentType]:
+        """ ดึงคอมเมนต์ของโพสต์ """
         comments = ForumGateway.get_comments(post_id)
-        return [ForumCommentType(id=c.id, user_id=c.user_id, post_id=c.post_id, content=c.content) for c in comments]
+        return [
+            ForumCommentType(
+                id=c.id,
+                user_id=c.user_id,
+                post_id=c.post_id,
+                parent_comment_id=c.parent_comment_id,
+                content=c.content,
+                created_at=str(c.created_at)  # ✅ แปลง `datetime` เป็น `str`
+            ) 
+            for c in comments
+        ]
  
     @strawberry.field
     def get_post_with_comments(self, post_id: int) -> ForumPostDetailType:
         """ ดึงโพสต์และคอมเมนต์ของโพสต์ """
-        post = ForumGateway.get_post_by_id(post_id)
+        post = ForumGateway.get_post_by_id(post_id)  # ✅ เรียกฟังก์ชันใหม่
+        if not post:
+            return None
+
         comments = ForumGateway.get_comments(post_id)
         return ForumPostDetailType(
             post=ForumPostType(
                 id=post.id,
+                user_id=post.user_id,
                 title=post.title,
                 content=post.content,
+                image_url=post.image_url,
                 tags=post.tags,
-                likes=post.likes
+                likes=post.likes,
+                created_at=str(post.created_at)
             ),
-            comments=[ForumCommentType(id=c.id, user_id=c.user_id, post_id=c.post_id, content=c.content) for c in comments]
+            comments=[
+                ForumCommentType(
+                    id=c.id, 
+                    user_id=c.user_id, 
+                    post_id=c.post_id, 
+                    parent_comment_id=c.parent_comment_id,
+                    content=c.content, 
+                    created_at=str(c.created_at),
+                    user_profile=c.user.profile_picture_url
+                ) 
+                for c in comments
+            ]
         )
+
 
 
