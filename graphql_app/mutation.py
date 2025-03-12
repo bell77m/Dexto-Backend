@@ -135,11 +135,13 @@ class Mutation:
     
     @strawberry.mutation
     def create_post(self, user_id: int, title: str, content: str, tags: str, image_data: Optional[str] = None, image_url: Optional[str] = None) -> Optional[ForumPostType]:
-        post = ForumGateway.create_post(user_id, title, content, tags, image_data, image_url)
+        post = ForumGateway.create_post(user_id, title, content, tags, image_url)
         if post:
             return ForumPostType(
                 id=post.id,
                 user_id=post.user_id,
+                user_name=post.user.display_name,  # ✅ เพิ่มชื่อของเจ้าของโพสต์
+                user_profile=post.user.profile_picture_url,
                 title=post.title,
                 content=post.content,
                 tags=post.tags,
@@ -166,6 +168,8 @@ class Mutation:
                 id=comment.id,
                 user_id=comment.user_id,
                 post_id=comment.post_id,
+                user_name=comment.user.display_name,  # ✅ เพิ่มชื่อของเจ้าของคอมเมนต์
+                user_profile=comment.user.profile_picture_url,
                 parent_comment_id=comment.parent_comment_id,  # ✅ ส่งค่า `parent_comment_id`
                 content=comment.content,
                 created_at=str(comment.created_at)  # ✅ ส่งค่า `created_at`

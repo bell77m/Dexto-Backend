@@ -125,18 +125,19 @@ class Query:
     
     @strawberry.field
     def search_posts(self, query: str) -> List[ForumPostType]:
-        """ ค้นหาโพสต์จากหัวข้อหรือแท็ก """
         posts = ForumGateway.search_posts(query)
         return [
             ForumPostType(
                 id=post.id,
-               user_id=post.user_id,  # ✅ เพิ่ม `user_id`
-              title=post.title,
-              content=post.content,
-              image_url=post.image_url if post.image_url else None,
-              tags=post.tags,
-              likes=post.likes,
-              created_at=str(post.created_at)  # ✅ ป้องกัน `NoneType` error
+                user_id=post.user_id,
+                user_name=post.user.display_name,  
+                user_profile=post.user.profile_picture_url, 
+                title=post.title,
+                content=post.content,
+                image_url=post.image_url if post.image_url else None,
+                tags=post.tags,
+                likes=post.likes,
+                created_at=str(post.created_at)  # ✅ ป้องกัน `NoneType` error
            ) 
            for post in posts
         ]
@@ -150,6 +151,8 @@ class Query:
                 id=c.id,
                 user_id=c.user_id,
                 post_id=c.post_id,
+                user_name=c.user.display_name,  # ✅ เพิ่มชื่อของเจ้าของคอมเมนต์
+                user_profile=c.user.profile_picture_url, 
                 parent_comment_id=c.parent_comment_id,
                 content=c.content,
                 created_at=str(c.created_at)  # ✅ แปลง `datetime` เป็น `str`

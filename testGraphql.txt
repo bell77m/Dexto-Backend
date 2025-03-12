@@ -1,11 +1,11 @@
-query {
-  getUsers {
-    id
-    displayName
-    email
-    profilePictureUrl
-  }
-}
+# query {
+#   getUsers {
+#     id
+#     displayName
+#     email
+#     profilePictureUrl
+#   }
+# }
 
 # query {
 #   getUserById(id: 2) {
@@ -89,7 +89,7 @@ query {
 # }
 
 # query {
-#   getFriends(userId: 8) {
+#   getFriends(userId: 16) {
 #     id
 #     displayName
 #     email
@@ -129,5 +129,142 @@ query {
 #     email
 #     profilePictureUrl
 #     requestSent
+#   }
+# }
+
+# mutation {
+#   sendMessage(userId: 1, friend_id: 2, message: null, image_url: "https://example.com/sample-image.jpg")
+# }
+
+# query {
+#   getChatMessages(userId: 16, friendId: 17) {
+#     id
+#     senderId
+#     message
+#     imageUrl
+#     isRead
+#     sentAt
+#   }
+# }
+
+# mutation {
+#   sendMessage(userId: 16, friendId: 18, message: "Hello Mile")
+# }
+
+# mutation {
+#   markMessagesAsRead(userId: 16, friendId: 17)
+# }
+
+# query {
+#   getChatMessages(userId: 16, friendId: 18) {
+#     id
+#     message
+#     isRead
+#   }
+# }
+
+# query {
+#   getFriendChat(userId: 16) {
+#     id
+#     displayName
+#     profilePictureUrl
+#     lastMessage
+#     lastImage
+#     lastMessageTime
+#     lastIsRead
+#   }
+# }
+
+# mutation {
+#   createPost(
+#     userId: 1, 
+#     title: "My New Post", 
+#     content: "This is a test post", 
+#     tags: "test,graphql", 
+#     imageUrl: "https://example.com/image.jpg"
+#     ) {
+#     	id
+#    	 	userName
+#     	userProfile
+#     	title
+#     	content
+#     	imageUrl
+#    	 	tags
+#     	createdAt
+#   }
+# }
+
+# mutation {
+#   createPost(
+#     userId: 16 , 
+#     title: "Dexto", 
+#     content: "This is a test post with dexto.", 
+#     tags: "test,image",
+#     imageUrl: "https://example.com/path-to-image.jpg"
+#   ) {
+#     id
+#     userName
+#     title
+#     content
+#     imageUrl
+#     tags
+#     createdAt
+#   }
+# }
+
+# query {
+#   searchPosts(query: "post") {
+#     id
+#     userName
+#     title
+#     content
+#     tags
+#     imageUrl
+#     createdAt
+#   }
+# }
+
+# mutation {
+#   likePost(userId: 18, postId: 8)
+# }
+
+# mutation {
+#   addComment(userId: 19, postId: 8, content: "This is a comment") {
+#     id
+#     userName
+#     userProfile
+#     content
+#     createdAt
+#   }
+# }
+
+# query {
+#   getComments(postId: 8) {
+#     id
+#     userName   
+#     content
+#     createdAt
+#   }
+# }
+
+# query {
+#   getPostWithComments(postId: 8) {
+#     post {
+#       id
+#       userName  
+#       title
+#       content
+#       imageUrl
+#       tags
+#       likes
+#       createdAt
+#     }
+#     comments {
+#       id
+#       userName  
+#       parentCommentId
+#       content
+#       createdAt
+#     }
 #   }
 # }

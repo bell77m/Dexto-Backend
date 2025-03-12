@@ -2,26 +2,29 @@ from graphql_app.database import SessionLocal
 from graphql_app.model import ForumPost, ForumComment, ForumLike
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func  
+from typing import Optional, List
 
 
 class ForumGateway:
+    
     @staticmethod
-    def create_post(user_id: int, title: str, content: str, tags: str, image_data: str = None, image_url: str = None):
-        """ เพิ่มโพสต์ใหม่ """
+    def create_post(user_id: int, title: str, content: str, tags: str, image_url: Optional[str] = None):
+        """ เพิ่มโพสต์ใหม่ พร้อมรองรับรูปภาพ """
         with SessionLocal() as db:
             new_post = ForumPost(
                 user_id=user_id,
                 title=title,
                 content=content,
                 tags=tags,
-                image_data=image_data if image_data else None,  # ✅ เก็บรูปเป็น Base64
-                image_url=image_url if image_url else None,  # ✅ หรือเก็บเป็น URL
-                created_at=func.now()  # ✅ ป้องกัน `None` ใน `created_at`
+                image_url=image_url,  # ✅ รองรับ `image_url`
+                created_at=func.now()
             )
             db.add(new_post)
             db.commit()
             db.refresh(new_post)
-            return new_post
+            
+            post_with_user = db.query(ForumPost).options(joinedload(ForumPost.user)).filter(ForumPost.id == new_post.id).first()
+            return post_with_user
 
     @staticmethod
     def get_comments(post_id: int):
@@ -43,9 +46,9 @@ class ForumGateway:
 
     @staticmethod
     def search_posts(query: str):
-        """ ค้นหาโพสต์จากหัวข้อหรือแท็ก """
+        """ ค้นหาโพสต์จากชื่อหรือแท็ก """
         with SessionLocal() as db:
-            posts = db.query(ForumPost).filter(
+            posts = db.query(ForumPost).options(joinedload(ForumPost.user)).filter(
                 (ForumPost.title.ilike(f"%{query}%")) | (ForumPost.tags.ilike(f"%{query}%"))
             ).all()
             return posts
@@ -70,14 +73,22 @@ class ForumGateway:
             return True
 
     @staticmethod
-    def add_comment(user_id: int, post_id: int, content: str, parent_comment_id=None):
+    def add_comment(user_id: int, post_id: int, content: str, parent_comment_id: Optional[int] = None):
         """ เพิ่มคอมเมนต์หรือคอมเมนต์ตอบกลับ """
         with SessionLocal() as db:
-            new_comment = ForumComment(user_id=user_id, post_id=post_id, content=content, parent_comment_id=parent_comment_id)
+            new_comment = ForumComment(
+                user_id=user_id,
+                post_id=post_id,
+                parent_comment_id=parent_comment_id,
+                content=content,
+                created_at=func.now()
+            )
             db.add(new_comment)
             db.commit()
             db.refresh(new_comment)
-            return new_comment
+            
+            comment_with_user = db.query(ForumComment).options(joinedload(ForumComment.user)).filter(ForumComment.id == new_comment.id).first()
+            return comment_with_user
         
     @staticmethod
     def get_post_by_id(post_id: int):
