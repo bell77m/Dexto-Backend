@@ -1,16 +1,23 @@
 import tempfile
 import time
 import platform
-from fastapi import FastAPI, HTTPException
+import shutil
+import mimetypes
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import subprocess
 import os
+from typing import Dict, List, Optional
+import json
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 CODE_STORAGE = "code_storage"
+UPLOADS_DIR = "uploaded_files"
 os.makedirs(CODE_STORAGE, exist_ok=True)
+os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 
 class CodeRequest(BaseModel):
@@ -58,6 +65,7 @@ def execute_command(command, timeout=10, cwd=None):
 
 @app.post("/run")
 def run_code(request: CodeRequest):
+    """Run code with multiple files and imports"""
     if request.language not in SUPPORTED_LANGUAGES:
         raise HTTPException(400, "Unsupported language")
 
@@ -140,3 +148,124 @@ def run_code(request: CodeRequest):
         # Execute the command in temp directory context
         returncode, output = execute_command(run_command, cwd=temp_dir)
         return {"output": output}
+
+
+@app.post("/upload")
+async def upload_files(files: List[UploadFile] = File(...), folder: Optional[str] = Form(None)):
+    """Upload one or more files to the server. Optionally specify a folder path."""
+    result = {}
+
+    for file in files:
+        # Create safe filename
+        filename = file.filename
+        if not filename:
+            continue
+
+        # Create folder path if specified
+        if folder:
+            # Sanitize folder path
+            folder_path = os.path.normpath(folder).lstrip('/')
+            save_path = os.path.join(UPLOADS_DIR, folder_path)
+            os.makedirs(save_path, exist_ok=True)
+        else:
+            save_path = UPLOADS_DIR
+
+        # Full path to save the file
+        file_path = os.path.join(save_path, filename)
+
+        # Save the file
+        with open(file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+
+        # Add file info to result
+        result[os.path.join(folder, filename) if folder else filename] = {
+            "size": os.path.getsize(file_path),
+            "type": mimetypes.guess_type(filename)[0] or "application/octet-stream"
+        }
+
+    return {"uploaded": result}
+
+
+@app.get("/files")
+def list_files():
+    """List all files in the uploads directory"""
+    files = []
+
+    for root, dirs, filenames in os.walk(UPLOADS_DIR):
+        rel_path = os.path.relpath(root, UPLOADS_DIR)
+
+        for filename in filenames:
+            if rel_path == ".":
+                # File is in root
+                files.append(filename)
+            else:
+                # File is in subdirectory
+                files.append(os.path.join(rel_path, filename))
+
+    return {"files": files}
+
+
+@app.get("/files/{file_path:path}")
+def get_file(file_path: str):
+    """Retrieve a file from the uploads directory"""
+    # Normalize and secure the path
+    norm_path = os.path.normpath(file_path).lstrip('/')
+    full_path = os.path.join(UPLOADS_DIR, norm_path)
+
+    if not os.path.exists(full_path) or not os.path.isfile(full_path):
+        raise HTTPException(404, "File not found")
+
+    return FileResponse(
+        full_path,
+        headers={"Content-Disposition": f"attachment; filename={os.path.basename(file_path)}"}
+    )
+
+
+@app.delete("/files/{file_path:path}")
+def delete_file(file_path: str):
+    """Delete a file from the uploads directory"""
+    # Normalize and secure the path
+    norm_path = os.path.normpath(file_path).lstrip('/')
+    full_path = os.path.join(UPLOADS_DIR, norm_path)
+
+    if not os.path.exists(full_path):
+        raise HTTPException(404, "File not found")
+
+    if os.path.isfile(full_path):
+        os.remove(full_path)
+        return {"deleted": file_path}
+    elif os.path.isdir(full_path):
+        shutil.rmtree(full_path)
+        return {"deleted": file_path, "type": "directory"}
+
+    raise HTTPException(400, "Path is neither a file nor directory")
+
+
+@app.post("/move")
+def move_file(source: str, destination: str):
+    """Move a file from one location to another"""
+    # Normalize and secure the paths
+    source_path = os.path.normpath(source).lstrip('/')
+    dest_path = os.path.normpath(destination).lstrip('/')
+
+    full_source = os.path.join(UPLOADS_DIR, source_path)
+    full_dest = os.path.join(UPLOADS_DIR, dest_path)
+
+    # Check if source exists
+    if not os.path.exists(full_source):
+        raise HTTPException(404, "Source file or folder not found")
+
+    # Create destination directory if needed
+    os.makedirs(os.path.dirname(full_dest), exist_ok=True)
+
+    # Check if destination already exists
+    if os.path.exists(full_dest):
+        raise HTTPException(400, "Destination already exists")
+
+    try:
+        # Move the file or directory
+        shutil.move(full_source, full_dest)
+        return {"moved": {"from": source, "to": destination}}
+    except Exception as e:
+        raise HTTPException(500, f"Error moving file: {str(e)}")
