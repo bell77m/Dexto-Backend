@@ -213,16 +213,27 @@
 # }
 
 # query {
-#   searchPosts(query: "post") {
-#     id
-#     userName
-#     title
-#     content
-#     tags
-#     imageUrl
-#     createdAt
-#   }
-# }
+#     searchPosts(query: "") {
+#         id 
+#         userId
+#         userName 
+#         userProfile 
+#         title 
+#         content 
+#         imageUrl 
+#         tags 
+#         likes 
+#         createdAt
+#         comments {
+#           id 
+#           userId 
+#           userName 
+#           userProfile 
+#           content 
+#           createdAt
+#         }
+#     }
+#  }
 
 # mutation {
 #   likePost(userId: 18, postId: 8)
