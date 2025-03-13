@@ -6,13 +6,13 @@ class NotificationGateway:
 
     @classmethod
     def search_users(cls, query: str, user_id: int) -> List[Dict]:
-        """ค้นหาผู้ใช้ พร้อมตรวจสอบสถานะความเป็นเพื่อน และคำขอที่ส่งมา"""
+        """ค้นหาผู้ใช้ โดยค้นหาจากชื่อ (display_name) เท่านั้น และตรวจสอบสถานะความเป็นเพื่อน และคำขอที่ส่งมา"""
 
         with SessionLocal() as db:
+            # ค้นหาผู้ใช้จากชื่อ (display_name) เท่านั้น
             users = db.query(User).filter(
-                (User.display_name.ilike(f"%{query}%")) | 
-                (User.email.ilike(f"%{query}%")),
-                User.id != user_id  
+                User.display_name.ilike(f"%{query}%"),  # ค้นหาจากชื่อผู้ใช้
+                User.id != user_id  # ยกเว้นตัวเอง
             ).all()
 
             friends = db.query(Friend).filter(
