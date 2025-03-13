@@ -1,28 +1,21 @@
-import tempfile
-import time
-import platform
-import shutil
-import mimetypes
-import uuid
-import json
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set, Any
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, WebSocket, WebSocketDisconnect, Depends, Query
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
-import subprocess
-import os
-from fastapi.middleware.cors import CORSMiddleware
 import asyncio  # Added this import here to ensure it's at the top of the file
+import json
+import os
+import platform
+import subprocess
+import tempfile
+from datetime import datetime, timedelta
+from typing import Dict, Optional, Set, Any
 
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 # Use SelectorEventLoop on Windows to avoid Proactor issues
 if platform.system() == "Windows":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-
 app = FastAPI()
-
 
 CODE_STORAGE = "code_storage"
 UPLOADS_DIR = "uploaded_files"
@@ -176,6 +169,27 @@ def run_code(request: CodeRequest):
                 with open(file_path, "w") as f:
                     f.write(content)
 
+        # Handle JavaScript ES modules
+        if request.language == "javascript":
+            # Check if any file has import/export statements
+            has_es_modules = False
+            for content in request.files.values():
+                if "import " in content or "export " in content:
+                    has_es_modules = True
+                    break
+
+            # Create package.json for ES modules support if needed
+            if has_es_modules:
+                package_json = {
+                    "name": "temp-js-project",
+                    "version": "1.0.0",
+                    "type": "module"
+                }
+
+                package_path = os.path.join(temp_dir, "package.json")
+                with open(package_path, "w") as f:
+                    json.dump(package_json, f, indent=2)
+
         if request.language == "go":
             # Create go.mod with fixed module name
             go_mod_content = f"module {module_name}\ngo 1.21\n"
@@ -213,6 +227,8 @@ def run_code(request: CodeRequest):
 
 
 active_connections = {}
+
+
 @app.websocket("/ws/vc/{client_id}")
 async def VC_websocket_endpoint(websocket: WebSocket, client_id: str):
     try:
@@ -265,6 +281,8 @@ async def VC_websocket_endpoint(websocket: WebSocket, client_id: str):
                 print(f"Error notifying client {cid} about disconnection: {e}")
 
 
+# Uncomment the following if you want to activate the cleanup task
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(cleanup_inactive_sessions())
+
