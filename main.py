@@ -32,7 +32,8 @@ app.add_middleware(
     allow_origins=["*"],  # Allow all domains for now 
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_headers=["*"],
+    # Allow all headers
 )
 
 # GraphQL Router
