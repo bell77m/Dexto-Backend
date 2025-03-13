@@ -3,16 +3,26 @@ import time
 import platform
 import shutil
 import mimetypes
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+import uuid
+import json
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Set, Any
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, WebSocket, WebSocketDisconnect, Depends, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import subprocess
 import os
-from typing import Dict, List, Optional
-import json
 from fastapi.middleware.cors import CORSMiddleware
+import asyncio  # Added this import here to ensure it's at the top of the file
+
+
+# Use SelectorEventLoop on Windows to avoid Proactor issues
+if platform.system() == "Windows":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 
 app = FastAPI()
+
 
 CODE_STORAGE = "code_storage"
 UPLOADS_DIR = "uploaded_files"
@@ -20,11 +30,41 @@ os.makedirs(CODE_STORAGE, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 
+# Model definitions
 class CodeRequest(BaseModel):
     files: dict
     language: str
     main_file: str
 
+
+class SessionCreate(BaseModel):
+    session_id: Optional[str] = None
+    user_name: str
+
+
+class SessionJoin(BaseModel):
+    session_id: str
+    user_name: str
+
+
+class EditorUpdate(BaseModel):
+    session_id: str
+    file_path: str
+    content: str
+    cursor_position: Optional[dict] = None
+    user_id: str
+
+
+class VoiceData(BaseModel):
+    session_id: str
+    user_id: str
+    chunk_data: str  # Base64 encoded audio
+
+
+# Session management
+active_sessions: Dict[str, Dict[str, Any]] = {}
+connected_clients: Dict[str, Set[WebSocket]] = {}
+voice_clients: Dict[str, Dict[str, WebSocket]] = {}
 
 SUPPORTED_LANGUAGES = {
     "python": "python",
@@ -39,6 +79,28 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Session cleanup background task
+async def cleanup_inactive_sessions():
+    while True:
+        now = datetime.now()
+        sessions_to_remove = []
+
+        for session_id, session_data in active_sessions.items():
+            last_activity = session_data.get("last_activity", now)
+            # Remove sessions inactive for more than 24 hours
+            if now - last_activity > timedelta(hours=24):
+                sessions_to_remove.append(session_id)
+
+        for session_id in sessions_to_remove:
+            del active_sessions[session_id]
+            if session_id in connected_clients:
+                del connected_clients[session_id]
+            if session_id in voice_clients:
+                del voice_clients[session_id]
+
+        await asyncio.sleep(3600)  # Check once per hour
 
 
 def execute_command(command, timeout=10, cwd=None):
@@ -150,122 +212,59 @@ def run_code(request: CodeRequest):
         return {"output": output}
 
 
-@app.post("/upload")
-async def upload_files(files: List[UploadFile] = File(...), folder: Optional[str] = Form(None)):
-    """Upload one or more files to the server. Optionally specify a folder path."""
-    result = {}
-
-    for file in files:
-        # Create safe filename
-        filename = file.filename
-        if not filename:
-            continue
-
-        # Create folder path if specified
-        if folder:
-            # Sanitize folder path
-            folder_path = os.path.normpath(folder).lstrip('/')
-            save_path = os.path.join(UPLOADS_DIR, folder_path)
-            os.makedirs(save_path, exist_ok=True)
-        else:
-            save_path = UPLOADS_DIR
-
-        # Full path to save the file
-        file_path = os.path.join(save_path, filename)
-
-        # Save the file
-        with open(file_path, "wb") as buffer:
-            content = await file.read()
-            buffer.write(content)
-
-        # Add file info to result
-        result[os.path.join(folder, filename) if folder else filename] = {
-            "size": os.path.getsize(file_path),
-            "type": mimetypes.guess_type(filename)[0] or "application/octet-stream"
-        }
-
-    return {"uploaded": result}
-
-
-@app.get("/files")
-def list_files():
-    """List all files in the uploads directory"""
-    files = []
-
-    for root, dirs, filenames in os.walk(UPLOADS_DIR):
-        rel_path = os.path.relpath(root, UPLOADS_DIR)
-
-        for filename in filenames:
-            if rel_path == ".":
-                # File is in root
-                files.append(filename)
-            else:
-                # File is in subdirectory
-                files.append(os.path.join(rel_path, filename))
-
-    return {"files": files}
-
-
-@app.get("/files/{file_path:path}")
-def get_file(file_path: str):
-    """Retrieve a file from the uploads directory"""
-    # Normalize and secure the path
-    norm_path = os.path.normpath(file_path).lstrip('/')
-    full_path = os.path.join(UPLOADS_DIR, norm_path)
-
-    if not os.path.exists(full_path) or not os.path.isfile(full_path):
-        raise HTTPException(404, "File not found")
-
-    return FileResponse(
-        full_path,
-        headers={"Content-Disposition": f"attachment; filename={os.path.basename(file_path)}"}
-    )
-
-
-@app.delete("/files/{file_path:path}")
-def delete_file(file_path: str):
-    """Delete a file from the uploads directory"""
-    # Normalize and secure the path
-    norm_path = os.path.normpath(file_path).lstrip('/')
-    full_path = os.path.join(UPLOADS_DIR, norm_path)
-
-    if not os.path.exists(full_path):
-        raise HTTPException(404, "File not found")
-
-    if os.path.isfile(full_path):
-        os.remove(full_path)
-        return {"deleted": file_path}
-    elif os.path.isdir(full_path):
-        shutil.rmtree(full_path)
-        return {"deleted": file_path, "type": "directory"}
-
-    raise HTTPException(400, "Path is neither a file nor directory")
-
-
-@app.post("/move")
-def move_file(source: str, destination: str):
-    """Move a file from one location to another"""
-    # Normalize and secure the paths
-    source_path = os.path.normpath(source).lstrip('/')
-    dest_path = os.path.normpath(destination).lstrip('/')
-
-    full_source = os.path.join(UPLOADS_DIR, source_path)
-    full_dest = os.path.join(UPLOADS_DIR, dest_path)
-
-    # Check if source exists
-    if not os.path.exists(full_source):
-        raise HTTPException(404, "Source file or folder not found")
-
-    # Create destination directory if needed
-    os.makedirs(os.path.dirname(full_dest), exist_ok=True)
-
-    # Check if destination already exists
-    if os.path.exists(full_dest):
-        raise HTTPException(400, "Destination already exists")
-
+active_connections = {}
+@app.websocket("/ws/vc/{client_id}")
+async def VC_websocket_endpoint(websocket: WebSocket, client_id: str):
     try:
-        # Move the file or directory
-        shutil.move(full_source, full_dest)
-        return {"moved": {"from": source, "to": destination}}
+        await websocket.accept()
+        active_connections[client_id] = websocket
+        print(f"Connection established with client: {client_id}")
+        # Notify other clients about the new connection
+        for cid, conn in active_connections.items():
+            if cid != client_id:
+                try:
+                    await conn.send_text(json.dumps({
+                        "join": True,
+                        "sender": client_id
+                    }))
+                except Exception as e:
+                    print(f"Error notifying client {cid}: {e}")
+        # Main message loop
+        while True:
+            try:
+                message = await websocket.receive_text()
+                data = json.loads(message)
+                print(f"Received message from {client_id}: {data}")
+
+                if "target" in data and data["target"] in active_connections:
+                    await active_connections[data["target"]].send_text(json.dumps(data))
+                    print(f"Message forwarded to {data['target']}")
+            except WebSocketDisconnect:
+                print(f"Client {client_id} disconnected normally")
+                break
+            except Exception as e:
+                print(f"Error processing message from {client_id}: {e}")
+                break
     except Exception as e:
-        raise HTTPException(500, f"Error moving file: {str(e)}")
+        print(f"Error during WebSocket communication with {client_id}: {e}")
+    finally:
+        if client_id in active_connections:
+            try:
+                del active_connections[client_id]
+                print(f"Connection closed for client: {client_id}")
+            except Exception as e:
+                print(f"Error removing client {client_id} from active connections: {e}")
+        # Notify other clients about the disconnection
+        for cid, conn in active_connections.items():
+            try:
+                await conn.send_text(json.dumps({
+                    "leave": True,
+                    "sender": client_id
+                }))
+            except Exception as e:
+                print(f"Error notifying client {cid} about disconnection: {e}")
+
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(cleanup_inactive_sessions())
