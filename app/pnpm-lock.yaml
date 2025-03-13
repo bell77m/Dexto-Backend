@@ -1,0 +1,23 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      websockets:
+        specifier: ^0.2.0
+        version: 0.2.0
+
+packages:
+
+  websockets@0.2.0:
+    resolution: {integrity: sha512-GjhUvj0PfZMpsRI7BdyyM7wsaGDkDd3uMrFThWNyb3lQy8BxmLWxtE22W7pQpI7z703xht8j1fqVOjRkZIulUw==}
+    engines: {node: '>=0.4.10'}
+
+snapshots:
+
+  websockets@0.2.0: {}
