@@ -8,7 +8,7 @@
 # }
 
 # query {
-#   getUserById(id: 2) {
+#   getUserById(id: 6) {
 #     id
 #     displayName
 #     email
@@ -123,7 +123,7 @@
 # }
 
 # query {
-#   searchUsers(query: "crea", userId: 7) {
+#   searchUsers(query: "mail", userId: 7) {
 #     id
 #     displayName
 #     email
@@ -194,23 +194,6 @@
 #   }
 # }
 
-# mutation {
-#   createPost(
-#     userId: 16 , 
-#     title: "Dexto", 
-#     content: "This is a test post with dexto.", 
-#     tags: "test,image",
-#     imageUrl: "https://example.com/path-to-image.jpg"
-#   ) {
-#     id
-#     userName
-#     title
-#     content
-#     imageUrl
-#     tags
-#     createdAt
-#   }
-# }
 
 # query {
 #     searchPosts(query: "") {
