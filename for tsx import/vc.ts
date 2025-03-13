@@ -1,4 +1,4 @@
-export class VideoCallManager {
+export class VCManager {
   // HTML Elements
   private startButton: HTMLButtonElement;
   private endButton: HTMLButtonElement;
@@ -279,5 +279,5 @@ export class VideoCallManager {
 
 // Initialize the video call manager when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-  new VideoCallManager();
+  new VCManager();
 });

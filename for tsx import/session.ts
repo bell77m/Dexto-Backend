@@ -21,7 +21,7 @@ export class SessionManager {
   private participantCount: number = 1;
 
   constructor() {
-    // Bind elements
+    // Bind HTML elements
     this.createSessionBtn = document.getElementById('create-session-btn') as HTMLButtonElement;
     this.joinSessionBtn = document.getElementById('join-session-btn') as HTMLButtonElement;
     this.leaveSessionBtn = document.getElementById('leave-session-btn') as HTMLButtonElement;
