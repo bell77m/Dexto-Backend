@@ -22,7 +22,7 @@ class User(Base):
     profile_picture_url = Column(
         String(500), 
         nullable=False, 
-        default="https://t4.ftcdn.net/jpg/00/64/67/63/360_F_64676383_LdbmhiNM6Ypzb3FM4PPuFP9rHe7ri8Ju.webp"
+        default="https://media-hosting.imagekit.io//2e4275e338334bb0/screenshot_1741887193791.png?Expires=1836495195&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=ytHuh2PnHCku~lCfRGcAUxXmB6VwrLRCHsERR3FCehIt~hVIqeJeBFPhtfWCeQrVU7nnSz-h3nDvlco579rTU-pWTTA3k9C3Y2D0cUJ10LV5IzL44KR~8yX7qgqGiQKZnPgJmXa4ER4gaEB74CvvdutJVD00vJCItd9k2L9eUb-7OLzSmDVIaKHHOjQVOTcSVDLTtevGFMkksPZneAH8ciE0xgbZA1ZMtJO-auxveQlm2ndbFeun9oTPMhw1hThIOZ7gy4ag-2bwPPd51on8tc51BrHpQ7kW7Vh~KTgXCkvMwfLAP4dn1iQrxpFWMdq-vLfWR8C024QUnK9afyqSRQ__"
     )
 
     friends = relationship("Friend", back_populates="user", foreign_keys="Friend.user_id")
