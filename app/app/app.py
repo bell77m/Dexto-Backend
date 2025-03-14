@@ -5,11 +5,14 @@ import platform
 import subprocess
 import tempfile
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Set, Any
+from typing import Dict, Optional, Set, Any, List
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+
+
 
 # Use SelectorEventLoop on Windows to avoid Proactor issues
 if platform.system() == "Windows":
@@ -22,6 +25,45 @@ UPLOADS_DIR = "uploaded_files"
 os.makedirs(CODE_STORAGE, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
+
+
+# Git-related models
+class GitAddRequest(BaseModel):
+    files: List[str]
+
+
+class GitRestoreRequest(BaseModel):
+    files: List[str]
+
+
+class GitCommitRequest(BaseModel):
+    message: str
+    author: Optional[str] = None
+    email: Optional[str] = None
+
+
+class GitRemoteRequest(BaseModel):
+    name: str
+    url: str
+
+
+class GitCredentials(BaseModel):
+    username: str
+    password: str
+
+
+class GitPushRequest(BaseModel):
+    remote: str
+    branch: str
+    credentials: Optional[GitCredentials] = None
+
+
+class GitBranchRequest(BaseModel):
+    name: str
+
+
+class GitCheckoutRequest(BaseModel):
+    branch: str
 
 # Model definitions
 class CodeRequest(BaseModel):
@@ -280,6 +322,282 @@ async def VC_websocket_endpoint(websocket: WebSocket, client_id: str):
             except Exception as e:
                 print(f"Error notifying client {cid} about disconnection: {e}")
 
+
+
+
+
+# Git utilities
+def run_git_command(command, cwd=UPLOADS_DIR, timeout=30, env=None):
+    """Run a git command and return the output"""
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=timeout,
+            cwd=cwd,
+            env=env
+        )
+        return {"success": True, "output": result.stdout.strip()}
+    except subprocess.CalledProcessError as e:
+        return {"success": False, "error": e.stderr.strip() or e.stdout.strip() or str(e)}
+    except subprocess.TimeoutExpired:
+        return {"success": False, "error": "Command timed out"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# Git endpoints
+@app.post("/git/init")
+def init_git_repo():
+    """Initialize git repository"""
+    result = run_git_command(["git", "init"])
+    if result["success"]:
+        return {"success": True, "message": "Git repository initialized successfully"}
+    return {"success": False, "error": result["error"]}
+
+
+@app.get("/git/status")
+def get_git_status():
+    """Get git repository status"""
+    # Check if it's a git repository
+    is_repo = run_git_command(["git", "rev-parse", "--is-inside-work-tree"])
+    if not is_repo["success"]:
+        return {"isRepo": False, "modified": [], "staged": [], "untracked": []}
+
+    # Get current branch
+    branch_result = run_git_command(["git", "branch", "--show-current"])
+    branch = branch_result["output"] if branch_result["success"] else None
+
+    # Get status in porcelain format for easy parsing
+    status_result = run_git_command(["git", "status", "--porcelain"])
+
+    if not status_result["success"]:
+        return {"isRepo": True, "branch": branch, "modified": [], "staged": [], "untracked": []}
+
+    status_output = status_result["output"]
+
+    # Parse porcelain output
+    modified = []
+    staged = []
+    untracked = []
+
+    for line in status_output.split("\n"):
+        if not line.strip():
+            continue
+
+        status_code = line[:2]
+        filename = line[3:].strip()  # Ensure we strip any extra whitespace
+
+        # Skip .git directory entries if they appear
+        if filename.startswith(".git/"):
+            continue
+
+        if status_code == "??":
+            untracked.append(filename)
+        elif status_code[0] == "M":
+            staged.append(filename)
+        elif status_code[1] == "M":
+            modified.append(filename)
+        elif status_code[0] in ["A", "D", "R", "C"]:
+            staged.append(filename)
+        elif status_code[1] in ["A", "D", "R", "C", "M"]:
+            modified.append(filename)
+
+    return {
+        "isRepo": True,
+        "branch": branch,
+        "modified": modified,
+        "staged": staged,
+        "untracked": untracked
+    }
+
+
+@app.post("/git/add")
+def add_files(request: GitAddRequest):
+    """Stage files for commit"""
+    if not request.files:
+        return {"success": False, "error": "No files specified"}
+
+    command = ["git", "add"]
+    command.extend(request.files)
+
+    result = run_git_command(command)
+    if result["success"]:
+        return {"success": True, "message": f"Added {len(request.files)} files"}
+    return {"success": False, "error": result["error"]}
+
+
+@app.post("/git/restore")
+def restore_files(request: GitRestoreRequest):
+    """Unstage files"""
+    if not request.files:
+        return {"success": False, "error": "No files specified"}
+
+    command = ["git", "restore", "--staged"]
+    command.extend(request.files)
+
+    result = run_git_command(command)
+    if result["success"]:
+        return {"success": True, "message": f"Unstaged {len(request.files)} files"}
+    return {"success": False, "error": result["error"]}
+
+
+@app.post("/git/commit")
+def commit_changes(request: GitCommitRequest):
+    """Commit staged changes"""
+    command = ["git", "commit", "-m", request.message]
+
+    # Set author if provided
+    env = os.environ.copy()
+    if request.author and request.email:
+        env["GIT_COMMITTER_NAME"] = request.author
+        env["GIT_COMMITTER_EMAIL"] = request.email
+        env["GIT_AUTHOR_NAME"] = request.author
+        env["GIT_AUTHOR_EMAIL"] = request.email
+
+    result = run_git_command(command, env=env)
+    if result["success"]:
+        return {"success": True, "message": "Changes committed successfully"}
+    return {"success": False, "error": result["error"]}
+
+
+@app.post("/git/remote/add")
+def add_remote(request: GitRemoteRequest):
+    """Add a remote repository"""
+    command = ["git", "remote", "add", request.name, request.url]
+
+    result = run_git_command(command)
+    if result["success"]:
+        return {"success": True, "message": f"Remote '{request.name}' added successfully"}
+    return {"success": False, "error": result["error"]}
+
+
+@app.post("/git/push")
+def push_changes(request: GitPushRequest):
+    """Push changes to remote repository"""
+    command = ["git", "push", request.remote, request.branch]
+
+    # Set credentials if provided
+    env = os.environ.copy()
+    if request.credentials:
+        git_credential = f"https://{request.credentials.username}:{request.credentials.password}@github.com"
+        env["GIT_ASKPASS"] = "echo"
+        env["GIT_TERMINAL_PROMPT"] = "0"
+        env["GCM_INTERACTIVE"] = "never"
+
+        # Create a temporary credential helper script
+        helper_script = os.path.join(UPLOADS_DIR, ".git-credentials-helper.sh")
+        with open(helper_script, "w") as f:
+            f.write(f"#!/bin/sh\necho {git_credential}")
+        os.chmod(helper_script, 0o755)
+
+        command = ["git", "-c", f"credential.helper={helper_script}", "push", request.remote, request.branch]
+
+    result = run_git_command(command, env=env, timeout=60)
+
+    # Clean up helper script if it exists
+    if request.credentials and os.path.exists(helper_script):
+        os.remove(helper_script)
+
+    if result["success"]:
+        return {"success": True, "message": f"Changes pushed to {request.remote}/{request.branch} successfully"}
+    return {"success": False, "error": result["error"]}
+
+
+@app.post("/git/pull")
+def pull_changes(request: GitPushRequest):
+    """Pull changes from remote repository"""
+    command = ["git", "pull", request.remote, request.branch]
+
+    # Set credentials if provided
+    env = os.environ.copy()
+    if request.credentials:
+        git_credential = f"https://{request.credentials.username}:{request.credentials.password}@github.com"
+        env["GIT_ASKPASS"] = "echo"
+        env["GIT_TERMINAL_PROMPT"] = "0"
+        env["GCM_INTERACTIVE"] = "never"
+
+        # Create a temporary credential helper script
+        helper_script = os.path.join(UPLOADS_DIR, ".git-credentials-helper.sh")
+        with open(helper_script, "w") as f:
+            f.write(f"#!/bin/sh\necho {git_credential}")
+        os.chmod(helper_script, 0o755)
+
+        command = ["git", "-c", f"credential.helper={helper_script}", "pull", request.remote, request.branch]
+
+    result = run_git_command(command, env=env, timeout=60)
+
+    # Clean up helper script if it exists
+    if request.credentials and os.path.exists(helper_script):
+        os.remove(helper_script)
+
+    if result["success"]:
+        return {"success": True, "message": f"Changes pulled from {request.remote}/{request.branch} successfully"}
+    return {"success": False, "error": result["error"]}
+
+
+@app.get("/git/log")
+def get_commit_logs(limit: int = 10):
+    """Get commit history"""
+    command = ["git", "log", f"-{limit}", "--pretty=format:%H|%an|%ae|%ad|%s"]
+
+    result = run_git_command(command)
+    if not result["success"]:
+        return []
+
+    logs = []
+    for line in result["output"].split("\n"):
+        if not line.strip():
+            continue
+
+        parts = line.split("|")
+        if len(parts) >= 5:
+            logs.append({
+                "hash": parts[0],
+                "author": parts[1],
+                "email": parts[2],
+                "date": parts[3],
+                "message": parts[4]
+            })
+
+    return logs
+
+
+@app.post("/git/branch")
+def create_branch(request: GitBranchRequest):
+    """Create a new branch"""
+    command = ["git", "branch", request.name]
+
+    result = run_git_command(command)
+    if result["success"]:
+        return {"success": True, "message": f"Branch '{request.name}' created successfully"}
+    return {"success": False, "error": result["error"]}
+
+
+@app.post("/git/checkout")
+def checkout_branch(request: GitCheckoutRequest):
+    """Switch to a branch"""
+    command = ["git", "checkout", request.branch]
+
+    result = run_git_command(command)
+    if result["success"]:
+        return {"success": True, "message": f"Switched to branch '{request.branch}'"}
+    return {"success": False, "error": result["error"]}
+
+
+@app.get("/git/branches")
+def list_branches():
+    """List all branches"""
+    command = ["git", "branch", "--format=%(refname:short)"]
+
+    result = run_git_command(command)
+    if not result["success"]:
+        return []
+
+    branches = [branch for branch in result["output"].split("\n") if branch.strip()]
+    return branches
 
 # Uncomment the following if you want to activate the cleanup task
 @app.on_event("startup")
